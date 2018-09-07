@@ -5,6 +5,8 @@ import android.content.res.AssetManager;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
+import junit.framework.Assert;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,10 +29,6 @@ public class ResourceAccessTest {
         assertNotNull(assetManager);
     }
 
-    @Before
-    public void InitCameraModel() {
-        CameraModel.Init();
-    }
 
     @After
     public void CloseManager() {
@@ -41,5 +39,16 @@ public class ResourceAccessTest {
     public void PackageName() {
         assertEquals("dev.ndcam.test", context.getPackageName());
     }
+
+    @Test
+    public void InitCameraModel() {
+        try {
+            CameraModel.Init();
+        }
+        catch(Exception e){
+            Assert.fail(e.getMessage());
+        }
+    }
+
 
 }
