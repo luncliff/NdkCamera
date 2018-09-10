@@ -17,20 +17,18 @@ public class CameraModelTest {
     @Rule
     public GrantPermissionRule cameraPermission = GrantPermissionRule.grant(Manifest.permission.CAMERA);
 
-    protected Device[] devices;
-
     @Before
     public void TryInit() {
         CameraModel.Init();
 
-        devices = CameraModel.GetDevices();
+        Device[] devices = CameraModel.GetDevices();
         Assert.assertNotNull(devices);
         Assert.assertTrue(devices.length > 0);
     }
 
     @Test
     public void AcquireDevices() {
-        for (Device device : devices) {
+        for (Device device : CameraModel.GetDevices()) {
             Assert.assertTrue(device.id != -1);
             Assert.assertTrue(device.isFront() || device.isBack() || device.isExternal());
         }

@@ -32,6 +32,8 @@ public class DeviceOperationTest extends CameraModelTest {
 
     @Test
     public void CloseWithoutStop() {
+        Device[] devices = CameraModel.GetDevices();
+        Assert.assertNotNull(devices);
         Device camera = null;
         for (Device device : devices)
             if (device.isFront())
@@ -47,6 +49,8 @@ public class DeviceOperationTest extends CameraModelTest {
 
     @Test
     public void CaptureNone() {
+        Device[] devices = CameraModel.GetDevices();
+        Assert.assertNotNull(devices);
         Device camera = null;
         for (Device device : devices)
             if (device.isFront())
@@ -64,6 +68,8 @@ public class DeviceOperationTest extends CameraModelTest {
 
     @Test
     public void CaptureOnce() {
+        Device[] devices = CameraModel.GetDevices();
+        Assert.assertNotNull(devices);
         Device camera = null;
         for (Device device : devices)
             if (device.isFront())
@@ -81,7 +87,8 @@ public class DeviceOperationTest extends CameraModelTest {
     }
 
     @Test
-    public void CaptureRepeat() {
+    public void CaptureRepeat() throws Exception{
+        Device[] devices = CameraModel.GetDevices();
         Image i1 = null, i2 = null;
         Device camera = null;
         for (Device device : devices)
@@ -92,14 +99,23 @@ public class DeviceOperationTest extends CameraModelTest {
 
         // start repeating capture operation
         camera.repeat(reader);
-        {
+        while (i1 == null)
             i1 = reader.acquireNextImage();
-            Assert.assertNotNull(i1);
 
-            i2 = reader.acquireNextImage();
-            Assert.assertNotNull(i2);
-        }
+        Thread.sleep(10000);
+        // int count = 1000;
+        // while(count-- > 0)
+        // {
+        // i1 = reader.acquireNextImage();
+        //
+        // i2 = reader.acquireNextImage();
+        //
+        // }
         camera.stop(); // stop after capture
+
+        Assert.assertNotNull(i1);
+        Assert.assertNotNull(i2);
+
         Assert.assertTrue(i1.getTimestamp() < i2.getTimestamp());
 
     }

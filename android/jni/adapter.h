@@ -61,6 +61,9 @@ _C_INTERFACE_ jboolean JNICALL
 Java_ndcam_Device_isExternal(JNIEnv *env, jobject instance) noexcept;
 
 _C_INTERFACE_ void JNICALL
+Java_ndcam_Device_open(JNIEnv *env, jobject instance) noexcept;
+
+_C_INTERFACE_ void JNICALL
 Java_ndcam_Device_startRepeat(JNIEnv *env, jobject instance, jobject surface) noexcept;
 _C_INTERFACE_ void JNICALL
 Java_ndcam_Device_startCapture(JNIEnv *env, jobject instance, jobject surface) noexcept;
