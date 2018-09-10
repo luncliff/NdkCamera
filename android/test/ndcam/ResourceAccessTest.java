@@ -40,15 +40,5 @@ public class ResourceAccessTest {
         assertEquals("dev.ndcam.test", context.getPackageName());
     }
 
-    @Test
-    public void InitCameraModel() {
-        try {
-            CameraModel.Init();
-        }
-        catch(Exception e){
-            Assert.fail(e.getMessage());
-        }
-    }
-
 
 }
