@@ -4,6 +4,7 @@ import android.graphics.ImageFormat;
 import android.media.Image;
 import android.media.ImageReader;
 import android.support.test.runner.AndroidJUnit4;
+import android.util.Log;
 
 import junit.framework.Assert;
 
@@ -16,18 +17,18 @@ import java.util.concurrent.Future;
 
 @RunWith(AndroidJUnit4.class)
 public class DeviceOperationTest extends CameraModelTest {
+
     ImageReader reader;
 
     @Before
     public void CreateImageReader() {
-        reader = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, 1);
+        // 1280 * 720
+        // 1920 * 1080
+        reader = ImageReader.newInstance(
+                1920, 1080, ImageFormat.YUV_420_888,
+                30);
 
         Assert.assertNotNull(reader);
-    }
-
-    @After
-    public void CloseImageReader() {
-        reader.close();
     }
 
     @Test
@@ -41,50 +42,50 @@ public class DeviceOperationTest extends CameraModelTest {
 
         // front camera
         Assert.assertNotNull(camera);
-        camera.capture(reader);
+        camera.repeat(reader);
         // camera.stop();
 
         // !!! stop is missing !!!
     }
-
-    @Test
-    public void CaptureNone() {
-        Device[] devices = CameraModel.GetDevices();
-        Assert.assertNotNull(devices);
-        Device camera = null;
-        for (Device device : devices)
-            if (device.isFront())
-                camera = device;
-        // front camera
-        Assert.assertNotNull(camera);
-
-        camera.capture(reader);
-        camera.stop(); // stop just after capture request
-        {
-            Image image = reader.acquireLatestImage();
-            Assert.assertNull(image);
-        }
-    }
-
-    @Test
-    public void CaptureOnce() {
-        Device[] devices = CameraModel.GetDevices();
-        Assert.assertNotNull(devices);
-        Device camera = null;
-        for (Device device : devices)
-            if (device.isFront())
-                camera = device;
-        // front camera
-        Assert.assertNotNull(camera);
-
-        // start capture operation
-        camera.capture(reader);
-        {
-            Image image = reader.acquireNextImage();
-            Assert.assertNotNull(image);
-        }
-        camera.stop(); // stop after capture
-    }
+//
+//    @Test
+//    public void CaptureNone() {
+//        Device[] devices = CameraModel.GetDevices();
+//        Assert.assertNotNull(devices);
+//        Device camera = null;
+//        for (Device device : devices)
+//            if (device.isFront())
+//                camera = device;
+//        // front camera
+//        Assert.assertNotNull(camera);
+//
+//        camera.capture(reader);
+//        camera.stop(); // stop just after capture request
+//        {
+//            Image image = reader.acquireLatestImage();
+//            Assert.assertNull(image);
+//        }
+//    }
+//
+//    @Test
+//    public void CaptureOnce() {
+//        Device[] devices = CameraModel.GetDevices();
+//        Assert.assertNotNull(devices);
+//        Device camera = null;
+//        for (Device device : devices)
+//            if (device.isFront())
+//                camera = device;
+//        // front camera
+//        Assert.assertNotNull(camera);
+//
+//        // start capture operation
+//        camera.capture(reader);
+//        {
+//            Image image = reader.acquireNextImage();
+//            Assert.assertNotNull(image);
+//        }
+//        camera.stop(); // stop after capture
+//    }
 
     @Test
     public void CaptureRepeat() throws Exception{
@@ -99,24 +100,26 @@ public class DeviceOperationTest extends CameraModelTest {
 
         // start repeating capture operation
         camera.repeat(reader);
-        while (i1 == null)
-            i1 = reader.acquireNextImage();
+        Image image = null;
+        int i = 300;
+        while(i-- > 0)
+        {
+            Thread.sleep(30);
 
-        Thread.sleep(10000);
-        // int count = 1000;
-        // while(count-- > 0)
-        // {
-        // i1 = reader.acquireNextImage();
-        //
-        // i2 = reader.acquireNextImage();
-        //
-        // }
+            image = reader.acquireNextImage();
+            if(image != null)
+            {
+                Log.i("ndk_camera", "format " + image.getFormat() +
+                        " " + image.getWidth() +
+                        "/" + image.getHeight());
+                image.close();
+            }
+        }
+        Assert.assertNotNull(image);
+
         camera.stop(); // stop after capture
 
-        Assert.assertNotNull(i1);
-        Assert.assertNotNull(i2);
-
-        Assert.assertTrue(i1.getTimestamp() < i2.getTimestamp());
+        // Assert.assertTrue(i1.getTimestamp() < i2.getTimestamp());
 
     }
 }

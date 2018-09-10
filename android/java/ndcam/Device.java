@@ -11,7 +11,8 @@ public class Device {
      */
     public short id = -1;
 
-    Device(){}
+    Device() {
+    }
 
     public native boolean isFront();
 

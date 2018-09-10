@@ -57,19 +57,11 @@ struct context_t
 
     void release() noexcept
     {
-        if (manager)
-            ACameraManager_delete(manager);
-        manager = nullptr;
-
-        if (id_list)
-            ACameraManager_deleteCameraIdList(id_list);
-        id_list = nullptr;
-
-        for (auto &meta : metadata_set)
-            if (meta)
+        for (auto &session : session_set)
+            if (session)
             {
-                ACameraMetadata_free(meta);
-                meta = nullptr;
+                ACameraCaptureSession_close(session);
+                session = nullptr;
             }
 
         for (auto &device : device_set)
@@ -78,6 +70,21 @@ struct context_t
                 ACameraDevice_close(device);
                 device = nullptr;
             }
+
+        for (auto &meta : metadata_set)
+            if (meta)
+            {
+                ACameraMetadata_free(meta);
+                meta = nullptr;
+            }
+
+        if (id_list)
+            ACameraManager_deleteCameraIdList(id_list);
+        id_list = nullptr;
+
+        if (manager)
+            ACameraManager_delete(manager);
+        manager = nullptr;
     }
 
     int32_t get_facing(uint16_t id) noexcept
@@ -94,32 +101,38 @@ struct context_t
     }
 };
 
-void context_on_device_disconnected(context_t &context, ACameraDevice *device) noexcept
+void context_on_device_disconnected(context_t &context,
+                                    ACameraDevice *device) noexcept
 {
-    const auto id = ACameraDevice_getId(device);
+    const char *id = ACameraDevice_getId(device);
     logger->error("on_device_disconnect: {}", id);
     return;
 }
 
-void context_on_device_error(context_t &context, ACameraDevice *device, int error) noexcept
+void context_on_device_error(context_t &context,
+                             ACameraDevice *device, int error) noexcept
 {
-    const auto id = ACameraDevice_getId(device);
+    const char *id = ACameraDevice_getId(device);
     logger->error("on_device_error: {} {}", id, error);
     return;
 }
 
-void context_on_session_active(context_t &context, ACameraCaptureSession *session) noexcept
+void context_on_session_active(context_t &context,
+                               ACameraCaptureSession *session) noexcept
 {
     logger->error("on_session_active");
     return;
 }
 
-void context_on_session_closed(context_t &context, ACameraCaptureSession *session) noexcept
+void context_on_session_closed(context_t &context,
+                               ACameraCaptureSession *session) noexcept
 {
     logger->error("on_session_closed");
     return;
 }
-void context_on_session_ready(context_t &context, ACameraCaptureSession *session) noexcept
+
+void context_on_session_ready(context_t &context,
+                              ACameraCaptureSession *session) noexcept
 {
     logger->error("on_session_ready");
     return;
@@ -129,7 +142,7 @@ void context_on_capture_started(context_t &context, ACameraCaptureSession *sessi
                                 const ACaptureRequest *request,
                                 int64_t timestamp) noexcept
 {
-    logger->error("context_on_capture_started");
+    logger->error("context_on_capture_started: {}", timestamp);
     return;
 }
 
@@ -137,7 +150,17 @@ void context_on_capture_completed(context_t &context, ACameraCaptureSession *ses
                                   ACaptureRequest *request,
                                   const ACameraMetadata *result) noexcept
 {
-    logger->error("context_on_capture_completed");
+    camera_status_t status = ACAMERA_OK;
+    ACameraMetadata_const_entry entry{};
+    int64_t time_point = 0;
+    // ACAMERA_SENSOR_TIMESTAMP
+    // ACAMERA_SENSOR_INFO_TIMESTAMP_SOURCE
+    // ACAMERA_SENSOR_FRAME_DURATION
+    status = ACameraMetadata_getConstEntry(result, ACAMERA_SENSOR_TIMESTAMP, &entry);
+    if (status == ACAMERA_OK)
+        time_point = *(entry.data.i64);
+
+    logger->error("context_on_capture_completed: {}", time_point);
     return;
 }
 
@@ -145,7 +168,11 @@ void context_on_capture_failed(context_t &context, ACameraCaptureSession *sessio
                                ACaptureRequest *request,
                                ACameraCaptureFailure *failure) noexcept
 {
-    logger->error("context_on_capture_failed");
+    logger->error("context_on_capture_failed {} {} {} {}",
+                  failure->frameNumber,
+                  failure->reason,
+                  failure->sequenceId,
+                  failure->wasImageCaptured);
     return;
 }
 
@@ -193,8 +220,6 @@ void Java_ndcam_CameraModel_Init(JNIEnv *env, jclass type) noexcept
         logger->error("ACameraManager_getCameraCharacteristics");
         goto ThrowJavaException;
     }
-    logger->warn("ndk_camera is under develop");
-
     return;
 ThrowJavaException:
     env->ThrowNew(illegal_argument_exception, error_status_message(status));
@@ -304,6 +329,7 @@ void Java_ndcam_Device_startRepeat(JNIEnv *env, jobject instance,
     const auto &device = context.device_set[id];
     assert(device != nullptr);
 
+    // TODO: Resource cleanup
     // !!! This acquires a reference on the ANativeWindow !!!
     ANativeWindow *window = ANativeWindow_fromSurface(env, surface);
     // target surface
@@ -312,6 +338,10 @@ void Java_ndcam_Device_startRepeat(JNIEnv *env, jobject instance,
 
     // ACaptureRequest: how to capture
     ACaptureRequest *request{};
+    // ACaptureRequest_setEntry_*
+    // - ACAMERA_REQUEST_MAX_NUM_OUTPUT_STREAMS
+    // -
+
     // capture as a preview
     // TEMPLATE_RECORD, TEMPLATE_PREVIEW, TEMPLATE_MANUAL,
     status = ACameraDevice_createCaptureRequest(device, TEMPLATE_PREVIEW,
@@ -319,17 +349,21 @@ void Java_ndcam_Device_startRepeat(JNIEnv *env, jobject instance,
     assert(status == ACAMERA_OK);
     // designate target surface in request
     ACaptureRequest_addTarget(request, target);
+    // ACaptureRequest_removeTarget(request, target);
 
     // ACaptureSessionOutput: ??
 
     // session output container for multiplexing
     ACaptureSessionOutputContainer *container{};
     ACaptureSessionOutputContainer_create(&container);
+    //ACaptureSessionOutputContainer_free(container);
+
     // session output
     ACaptureSessionOutput *output{};
     ACaptureSessionOutput_create(window, &output);
 
     ACaptureSessionOutputContainer_add(container, output);
+    // ACaptureSessionOutputContainer_remove(container, output);
 
     // Hook to sync with session states
     ACameraCaptureSession_stateCallbacks stateCallbacks{};
@@ -363,7 +397,7 @@ void Java_ndcam_Device_startRepeat(JNIEnv *env, jobject instance,
     //ACaptureSessionOutput_free(output);
     //ACaptureSessionOutputContainer_free(container);
 
-    ANativeWindow_release(window);
+    // ANativeWindow_release(window);
 }
 
 void Java_ndcam_Device_startCapture(JNIEnv *env, jobject instance,
@@ -383,9 +417,15 @@ void Java_ndcam_Device_stop(JNIEnv *env, jobject instance) noexcept
 
     const auto id = env->GetShortField(instance, device_id_f);
     assert(id != -1);
-    // ACameraCaptureSession_setRepeatingRequest
-    ACameraCaptureSession_stopRepeating(context.session_set[id]);
-    context.session_set[id] = nullptr;
+
+    if (context.session_set[id])
+    {
+        // ACameraCaptureSession_setRepeatingRequest
+        ACameraCaptureSession_stopRepeating(context.session_set[id]);
+
+        ACameraCaptureSession_close(context.session_set[id]);
+        context.session_set[id] = nullptr;
+    }
     context.seq_id_set[id] = 0;
 }
 
