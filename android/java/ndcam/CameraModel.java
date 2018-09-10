@@ -13,21 +13,19 @@ public class CameraModel {
 
     private static Device[] devices = null;
 
-    public static native
-    void Init();
+    public static native void Init();
 
-    private static native int GetDeviceCount();
+    public static native int GetDeviceCount();
+
     private static native void SetDeviceData(Device[] devices);
 
-    public static synchronized
-    Device[] GetDevices()
-    {
-        if(devices == null) // allocate java objects
+    public static synchronized Device[] GetDevices() {
+        if (devices == null) // allocate java objects
         {
             int count = GetDeviceCount();
 
             devices = new Device[count];
-            for(int i = 0; i < count; ++i)
+            for (int i = 0; i < count; ++i)
                 devices[i] = new Device();
 
             SetDeviceData(devices);

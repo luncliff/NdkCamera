@@ -47,7 +47,7 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 25        // Minimum SDK to use NDK Camera
+        minSdkVersion 24        // Minimum SDK to use NDK Camera
         targetSdkVersion 27
 
         // Follow native code's verson

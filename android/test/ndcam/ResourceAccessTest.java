@@ -29,7 +29,6 @@ public class ResourceAccessTest {
         assertNotNull(assetManager);
     }
 
-
     @After
     public void CloseManager() {
         assetManager.close();
@@ -39,6 +38,5 @@ public class ResourceAccessTest {
     public void PackageName() {
         assertEquals("dev.ndcam.test", context.getPackageName());
     }
-
 
 }

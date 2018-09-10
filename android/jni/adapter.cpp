@@ -42,6 +42,9 @@ struct context_t
     // if element is nullptr, it means the device is not open.
     std::array<ACameraDevice *, max_camera_count> device_set{};
 
+    // sequence number from capture session
+    std::array<int, max_camera_count> seq_id_set{};
+
   public:
     ~context_t() noexcept
     {
@@ -78,10 +81,15 @@ struct context_t
 
 void context_on_disconnect(context_t &context, ACameraDevice *device) noexcept
 {
+    const auto id = ACameraDevice_getId(device);
+    logger->error("on_disconnect: {}", id);
     return;
 }
+
 void context_on_error(context_t &context, ACameraDevice *device, int error) noexcept
 {
+    const auto id = ACameraDevice_getId(device);
+    logger->error("on_error: {} {}", id, error);
     return;
 }
 
@@ -127,55 +135,7 @@ void Java_ndcam_CameraModel_Init(JNIEnv *env, jclass type) noexcept
         logger->error("ACameraManager_getCameraCharacteristics");
         goto ThrowJavaException;
     }
-
-    // ACameraDevice_StateCallbacks callbacks{};
-    // callbacks.context = std::addressof(context);
-    // callbacks.onDisconnected = reinterpret_cast<ACameraDevice_StateCallback>(context_on_disconnect);
-    // callbacks.onError = reinterpret_cast<ACameraDevice_ErrorStateCallback>(context_on_error);
-    // for (uint16_t i = 0; i < context.id_list->numCameras; ++i)
-    // {
-    //     status = ACameraManager_openCamera(
-    //         context.manager, context.id_list->cameraIds[i],
-    //         &callbacks, std::addressof(context.device_set[i]));
-    //     if (status == ACAMERA_OK)
-    //     {
-    //         ACameraDevice_close(context.device_set[i]);
-    //         context.device_set[i] = nullptr;
-    //         continue;
-    //     }
-    //     logger->error("ACameraManager_openCamera");
-    //     goto ThrowJavaException;
-    // }
-    // ACameraCaptureSession_capture;
-    // ACameraCaptureSession_setRepeatingRequest;
-
-    //    const auto request_template = ACameraDevice_request_template::TEMPLATE_PREVIEW;
-    //    // https://github.com/justinjoy/native-camera2/blob/master/app/src/main/jni/native-camera2-jni.cpp
-    //    ACameraCaptureSession* session{};
-    //    ACameraCaptureSession_stateCallbacks stateCallbacks{};
-    //    stateCallbacks.context = nullptr;
-    //    stateCallbacks.onActive(nullptr, session);
-    //    stateCallbacks.onClosed(nullptr, session);
-    //    stateCallbacks.onReady(nullptr, session);
-    //
-    //    ACameraCaptureSession_captureCallbacks captureCallbacks{};
     logger->warn("ndk_camera is under develop");
-    //
-    //    int cap_sequence = 0;
-    //    ACaptureRequest requests[2]{};
-    //    ACameraOutputTarget_create(nullptr, nullptr);
-    //    ACameraCaptureSession_capture(&session,  &captureCallbacks, 2, requests, &cap_sequence);
-    //    ACameraCaptureSession_close(session);
-    //    ACameraCaptureSession_abortCaptures(session);
-    //
-    //    ACameraCaptureSession_setRepeatingRequest(session, &captureCallbacks, 2, requests, &cap_sequence);
-    //    ACameraCaptureSession_stopRepeating(session);
-    //
-    //    ACaptureSessionOutput* output;
-    //    ACaptureSessionOutputContainer* cont;
-    //    ACaptureSessionOutputContainer_create(&cont);
-    //    ACaptureSessionOutputContainer_remove(cont, output);
-    //    ACaptureSessionOutputContainer_free(cont);
 
     return;
 ThrowJavaException:
@@ -245,6 +205,42 @@ Java_ndcam_Device_isFront(JNIEnv *env, jobject instance) noexcept
 
     const auto facing = context.get_facing(static_cast<uint16_t>(device_id));
     return static_cast<jboolean>(facing == ACAMERA_LENS_FACING_FRONT);
+}
+
+void Java_ndcam_Device_startRepeat(JNIEnv *env, jobject instance,
+                                   jobject surface) noexcept
+{
+    if (context.manager == nullptr) // not initialized
+        return;
+
+    auto device_id = env->GetShortField(instance, device_id_f);
+    assert(device_id != -1);
+}
+
+void Java_ndcam_Device_startCapture(JNIEnv *env, jobject instance,
+                                    jobject surface) noexcept
+{
+    if (context.manager == nullptr) // not initialized
+        return;
+
+    auto device_id = env->GetShortField(instance, device_id_f);
+    assert(device_id != -1);
+
+    ANativeWindow *window = ANativeWindow_fromSurface(env, surface);
+    goto ReleaseRefs;
+
+ReleaseRefs:
+    ANativeWindow_release(window);
+}
+
+void Java_ndcam_Device_stop(JNIEnv *env, jobject instance) noexcept
+{
+
+    if (context.manager == nullptr) // not initialized
+        return;
+
+    auto device_id = env->GetShortField(instance, device_id_f);
+    assert(device_id != -1);
 }
 
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----

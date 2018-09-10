@@ -15,6 +15,11 @@
 
 #include <ndk_camera.h>
 
+#include <android/hardware_buffer.h>
+// #include <android/native_activity.h>
+#include <android/native_window.h>
+#include <android/native_window_jni.h>
+
 #include <camera/NdkCameraCaptureSession.h>
 #include <camera/NdkCameraDevice.h>
 #include <camera/NdkCameraError.h>
@@ -54,6 +59,14 @@ Java_ndcam_Device_isBack(JNIEnv *env, jobject instance) noexcept;
 
 _C_INTERFACE_ jboolean JNICALL
 Java_ndcam_Device_isExternal(JNIEnv *env, jobject instance) noexcept;
+
+_C_INTERFACE_ void JNICALL
+Java_ndcam_Device_startRepeat(JNIEnv *env, jobject instance, jobject surface) noexcept;
+_C_INTERFACE_ void JNICALL
+Java_ndcam_Device_startCapture(JNIEnv *env, jobject instance, jobject surface) noexcept;
+
+_C_INTERFACE_ void JNICALL
+Java_ndcam_Device_stop(JNIEnv *env, jobject instance) noexcept;
 
 _HIDDEN_ auto error_status_message(camera_status_t status) noexcept
     -> const char *;
