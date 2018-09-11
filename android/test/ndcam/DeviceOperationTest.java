@@ -16,6 +16,8 @@ import org.junit.Test;
 import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.TimeUnit;
+
 @RunWith(AndroidJUnit4.class)
 public class DeviceOperationTest extends CameraModelTest {
     // Image reader doesn't have timeout.
@@ -29,7 +31,10 @@ public class DeviceOperationTest extends CameraModelTest {
     @Before
     public void CreateImageReader() {
         // 1920 * 1080, 30 FPS, YCbCr 4:2:0(YUV_420_888)
-        reader = ImageReader.newInstance(1920, 1080, ImageFormat.YUV_420_888, 30 // reserve some images
+        reader = ImageReader.newInstance( // create a new one
+                1920, 1080, // width, height
+                ImageFormat.YUV_420_888, // YCbCr
+                30 // reserve some images
         );
 
         Assert.assertNotNull(reader);
