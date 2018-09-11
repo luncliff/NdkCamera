@@ -8,7 +8,7 @@ add_subdirectory(cppmagic)
 # ------------ Project Variables ------------
 
 project(ndk_camera LANGUAGES CXX 
-        VERSION 0.1)
+        VERSION 0.2)
 
 # Ensure android
 if(NOT ANDROID)

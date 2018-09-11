@@ -1,11 +1,37 @@
-
+// ---------------------------------------------------------------------------
+//
+//  Author
+//      luncliff@gmail.com
+//
+// ---------------------------------------------------------------------------
 #include "adapter.h"
 
 #define PROLOGUE __attribute__((constructor))
 #define EPILOGUE __attribute__((destructor))
 
-std::shared_ptr<spdlog::logger> logger{};
+// - Note
+//      Logger instance will setup with library loading steps
+extern std::shared_ptr<spdlog::logger> logger;
 
+// - References
+//      https://github.com/gabime/spdlog
+PROLOGUE void jni_on_load(void) noexcept
+{
+    auto check_coroutine_available = [=]() -> magic::unplug {
+        co_await magic::stdex::suspend_never{};
+        // see fmt::format for usage
+        logger->info("{}.{}", tag, nullptr);
+    };
+
+    // log will print thread id and message
+    spdlog::set_pattern("[thread %t] %v");
+    logger = spdlog::android_logger_st("android", tag);
+
+    check_coroutine_available();
+}
+
+// - Note
+//      Group of java native type variables
 struct _HIDDEN_ java_type_set_t
 {
     jclass illegal_argument_exception{};
@@ -13,7 +39,8 @@ struct _HIDDEN_ java_type_set_t
 
     jclass device_t{};
     jfieldID device_id_f{};
-} java{};
+};
+java_type_set_t java{};
 
 void context_on_device_disconnected(
     context_t &context,
@@ -46,10 +73,10 @@ void context_on_session_closed(
     ACameraCaptureSession *session) noexcept
 {
     logger->warn("on_session_closed");
-//    auto it = std::find(context.session_set.begin(), context.session_set.end(), session);
-//    // found
-//    if(it != context.session_set.end())
-//        *it = nullptr;
+    //    auto it = std::find(context.session_set.begin(), context.session_set.end(), session);
+    //    // found
+    //    if(it != context.session_set.end())
+    //        *it = nullptr;
 
     return;
 }
@@ -255,8 +282,10 @@ void Java_ndcam_Device_open(JNIEnv *env, jobject instance) noexcept
 
     ACameraDevice_StateCallbacks callbacks{};
     callbacks.context = std::addressof(context);
-    callbacks.onDisconnected = reinterpret_cast<ACameraDevice_StateCallback>(context_on_device_disconnected);
-    callbacks.onError = reinterpret_cast<ACameraDevice_ErrorStateCallback>(context_on_device_error);
+    callbacks.onDisconnected = reinterpret_cast<ACameraDevice_StateCallback>(
+        context_on_device_disconnected);
+    callbacks.onError = reinterpret_cast<ACameraDevice_ErrorStateCallback>(
+        context_on_device_error);
 
     context.close_device(id);
     status = context.open_device(id, callbacks);
@@ -298,9 +327,12 @@ void Java_ndcam_Device_startRepeat(JNIEnv *env, jobject instance,
 
     ACameraCaptureSession_stateCallbacks on_state_changed{};
     on_state_changed.context = std::addressof(context);
-    on_state_changed.onReady = reinterpret_cast<ACameraCaptureSession_stateCallback>(context_on_session_ready);
-    on_state_changed.onClosed = reinterpret_cast<ACameraCaptureSession_stateCallback>(context_on_session_closed);
-    on_state_changed.onActive = reinterpret_cast<ACameraCaptureSession_stateCallback>(context_on_session_active);
+    on_state_changed.onReady = reinterpret_cast<ACameraCaptureSession_stateCallback>(
+        context_on_session_ready);
+    on_state_changed.onClosed = reinterpret_cast<ACameraCaptureSession_stateCallback>(
+        context_on_session_closed);
+    on_state_changed.onActive = reinterpret_cast<ACameraCaptureSession_stateCallback>(
+        context_on_session_active);
 
     ACameraCaptureSession_captureCallbacks on_capture_event{};
     on_capture_event.context = std::addressof(context);
@@ -360,9 +392,12 @@ void Java_ndcam_Device_startCapture(JNIEnv *env, jobject instance,
 
     ACameraCaptureSession_stateCallbacks on_state_changed{};
     on_state_changed.context = std::addressof(context);
-    on_state_changed.onReady = reinterpret_cast<ACameraCaptureSession_stateCallback>(context_on_session_ready);
-    on_state_changed.onClosed = reinterpret_cast<ACameraCaptureSession_stateCallback>(context_on_session_closed);
-    on_state_changed.onActive = reinterpret_cast<ACameraCaptureSession_stateCallback>(context_on_session_active);
+    on_state_changed.onReady = reinterpret_cast<ACameraCaptureSession_stateCallback>(
+        context_on_session_ready);
+    on_state_changed.onClosed = reinterpret_cast<ACameraCaptureSession_stateCallback>(
+        context_on_session_closed);
+    on_state_changed.onActive = reinterpret_cast<ACameraCaptureSession_stateCallback>(
+        context_on_session_active);
 
     ACameraCaptureSession_captureCallbacks on_capture_event{};
     on_capture_event.context = std::addressof(context);
@@ -406,25 +441,8 @@ void Java_ndcam_Device_stopCapture(JNIEnv *env, jobject instance) noexcept
 
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
-// https://github.com/gabime/spdlog
-PROLOGUE void jni_on_load(void) noexcept
-{
-    auto check_coroutine_available = [=]() -> magic::unplug {
-        co_await magic::stdex::suspend_never{};
-        // see fmt::format for usage
-        logger->info("{}.{}", tag, nullptr);
-    };
-
-    // log will print thread id and message
-    spdlog::set_pattern("[thread %t] %v");
-    logger = spdlog::android_logger_st("android", tag);
-
-    check_coroutine_available();
-}
-
-/**
- * @see NdkCameraError.h
- */
+// - References
+//      NdkCameraError.h
 auto camera_error_message(camera_status_t status) noexcept -> const char *
 {
     switch (status)

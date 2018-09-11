@@ -1,7 +1,5 @@
 package ndcam;
 
-import android.media.Image;
-
 /**
  * @author luncliff@gmail.com
  */
@@ -14,12 +12,13 @@ public class CameraModel {
     private static Device[] devices = null;
 
     /**
-     *  Multiple init is safe. Only *first* invocation will take effect
+     * Multiple init is safe. Only *first* invocation will take effect
      */
     public static synchronized native void Init();
 
     /**
      * Get the number of current camera devices
+     * 
      * @return 0 if initialization failed or no device confirmed
      */
     public static native int GetDeviceCount();
@@ -29,6 +28,10 @@ public class CameraModel {
      */
     private static native void SetDeviceData(Device[] devices);
 
+    /**
+     * @return array of available devices.
+     * @see Device
+     */
     public static synchronized Device[] GetDevices() {
         if (devices == null) // allocate java objects
         {

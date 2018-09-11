@@ -1,6 +1,13 @@
+// ---------------------------------------------------------------------------
+//
+//  Author
+//      luncliff@gmail.com
+//
+// ---------------------------------------------------------------------------
+
 #include <ndk_camera.h>
 
-extern std::shared_ptr<spdlog::logger> logger;
+std::shared_ptr<spdlog::logger> logger{};
 
 void context_t::release() noexcept
 {
@@ -54,7 +61,9 @@ void context_t::close_device(uint16_t id) noexcept
     {
         logger->warn("session for device {} is alive. abort/closing...", id);
 
+        // Abort all kind of requests
         ACameraCaptureSession_abortCaptures(session);
+        ACameraCaptureSession_stopRepeating(session);
         ACameraCaptureSession_close(session);
         session = nullptr;
     }
@@ -62,7 +71,11 @@ void context_t::close_device(uint16_t id) noexcept
     auto &device = this->device_set[id];
     if (device)
     {
+        // Producing meesage like following
         // W/ACameraCaptureSession: Device is closed but session 0 is not notified
+        //
+        // Seems like ffmpeg also has same issue, but can't sure about its comment...
+        //
         logger->warn("closing device {} ...", id);
 
         ACameraDevice_close(device);
@@ -152,6 +165,8 @@ camera_status_t context_t::start_repeat(
         std::addressof(this->seq_id_set[id]));
     assert(status == ACAMERA_OK);
 
+    ACaptureSessionOutputContainer_remove(container.get(),
+                                          output.get());
     ACaptureRequest_removeTarget(request.get(),
                                  target.get());
 
@@ -257,6 +272,8 @@ camera_status_t context_t::start_capture(
         std::addressof(this->seq_id_set[id]));
     assert(status == ACAMERA_OK);
 
+    ACaptureSessionOutputContainer_remove(container.get(),
+                                          output.get());
     ACaptureRequest_removeTarget(request.get(),
                                  target.get());
 

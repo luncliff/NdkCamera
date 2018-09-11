@@ -2,7 +2,6 @@ package ndcam;
 
 import android.Manifest;
 import android.hardware.camera2.CameraCharacteristics;
-import android.media.Image;
 import android.support.test.rule.GrantPermissionRule;
 import android.support.test.runner.AndroidJUnit4;
 
@@ -13,6 +12,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/**
+ * @author luncliff@gmail.com
+ */
 @RunWith(AndroidJUnit4.class)
 public class CameraModelTest {
     @Rule
@@ -31,11 +33,9 @@ public class CameraModelTest {
     public void AcquireDevices() {
         for (Device device : CameraModel.GetDevices()) {
             Assert.assertTrue(device.id != -1);
-            Assert.assertTrue(
-                    device.facing() == CameraCharacteristics.LENS_FACING_FRONT ||
-                    device.facing() == CameraCharacteristics.LENS_FACING_BACK ||
-                    device.facing() == CameraCharacteristics.LENS_FACING_EXTERNAL
-            );
+            Assert.assertTrue(device.facing() == CameraCharacteristics.LENS_FACING_FRONT
+                    || device.facing() == CameraCharacteristics.LENS_FACING_BACK
+                    || device.facing() == CameraCharacteristics.LENS_FACING_EXTERNAL);
         }
     }
 

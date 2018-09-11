@@ -18,10 +18,12 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * @author luncliff@gmail.com
+ */
 @RunWith(AndroidJUnit4.class)
 public class DeviceOperationTest extends CameraModelTest {
-    // Image reader doesn't have timeout.
-    // So we have to rule it for this test
+    // Image reader doesn't have timeout. So we have to rule it for this test
     @Rule
     public Timeout timeout = new Timeout(60, TimeUnit.SECONDS);
 
@@ -36,7 +38,6 @@ public class DeviceOperationTest extends CameraModelTest {
                 ImageFormat.YUV_420_888, // YCbCr
                 30 // reserve some images
         );
-
         Assert.assertNotNull(reader);
     }
 
@@ -46,7 +47,7 @@ public class DeviceOperationTest extends CameraModelTest {
         Device[] devices = CameraModel.GetDevices();
         Assert.assertNotNull(devices);
         camera = null;
-        // get rear camera
+        // get rear camera for test
         for (Device device : devices)
             if (device.facing() == CameraCharacteristics.LENS_FACING_BACK)
                 camera = device;
@@ -55,15 +56,25 @@ public class DeviceOperationTest extends CameraModelTest {
     }
 
     @After
-    public void CloseDevice() throws Exception {
+    public void CloseReaderAndDevice() throws Exception {
+        Assert.assertNotNull(reader);
+        reader.close();
+
+        Thread.sleep(500);
+
         Assert.assertNotNull(camera);
         camera.close();
+
         // wait for camera framework to stop completely
         Thread.sleep(500);
     }
 
+    /**
+     * This scenario will generate error logs like the following one queueBuffer:
+     * BufferQueue has been abandoned
+     */
     @Test
-    public void CloseWithoutStopRepeat() throws Exception {
+    public void StopRepeatWithoutConsume() throws Exception {
         // start repeating capture operation
         camera.repeat(reader.getSurface());
 
@@ -71,7 +82,7 @@ public class DeviceOperationTest extends CameraModelTest {
         // Give some time to the framework.
         Thread.sleep(100);
 
-        // camera.stop(); // !!! stop is missing !!!
+        camera.stopRepeat();
     }
 
     @Test
@@ -101,19 +112,24 @@ public class DeviceOperationTest extends CameraModelTest {
         camera.stopRepeat(); // stop after iteration
 
         Assert.assertNotNull(image); // ensure at least 1 image was acquired
+        Assert.assertTrue(count > 1); // Repeating capture leads to multiple images
         Assert.assertTrue(i > count); // !!! some images might be dropped !!!
     }
 
+    /**
+     * This scenario will generate error logs like the following one queueBuffer:
+     * BufferQueue has been abandoned
+     */
     @Test
-    public void CloseWithoutStopCapture() throws Exception {
+    public void StopCaptureWithoutConsume() throws Exception {
         // start repeating capture operation
-        camera.repeat(reader.getSurface());
+        camera.capture(reader.getSurface());
 
         // Android Camera 2 API uses background thread.
         // Give some time to the framework.
         Thread.sleep(100);
 
-        // camera.stop(); // !!! stop is missing !!!
+        camera.stopCapture();
     }
 
     @Test
