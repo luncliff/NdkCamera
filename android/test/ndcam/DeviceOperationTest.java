@@ -11,13 +11,17 @@ import junit.framework.Assert;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
-
-import java.util.concurrent.Future;
 
 @RunWith(AndroidJUnit4.class)
 public class DeviceOperationTest extends CameraModelTest {
+    // Image reader doesn't have timeout.
+    // So we have to rule it for this test
+    @Rule
+    public Timeout timeout = new Timeout(60, TimeUnit.SECONDS);
 
     ImageReader reader;
     Device camera;
@@ -25,17 +29,14 @@ public class DeviceOperationTest extends CameraModelTest {
     @Before
     public void CreateImageReader() {
         // 1920 * 1080, 30 FPS, YCbCr 4:2:0(YUV_420_888)
-        reader = ImageReader.newInstance(
-                1920, 1080, ImageFormat.YUV_420_888,
-                30 // reserve some images
+        reader = ImageReader.newInstance(1920, 1080, ImageFormat.YUV_420_888, 30 // reserve some images
         );
 
         Assert.assertNotNull(reader);
     }
 
     @Before
-    public void AcquireDevice()
-    {
+    public void AcquireDevice() {
         CameraModel.Init();
         Device[] devices = CameraModel.GetDevices();
         Assert.assertNotNull(devices);
@@ -49,7 +50,7 @@ public class DeviceOperationTest extends CameraModelTest {
     }
 
     @After
-    public void CloseDevice() throws  Exception{
+    public void CloseDevice() throws Exception {
         Assert.assertNotNull(camera);
         camera.close();
         // wait for camera framework to stop completely
@@ -69,7 +70,7 @@ public class DeviceOperationTest extends CameraModelTest {
     }
 
     @Test
-    public void TryRepeatCapture() throws Exception{
+    public void TryRepeatCapture() throws Exception {
         // start repeating capture operation
         camera.repeat(reader.getSurface());
 
@@ -77,28 +78,25 @@ public class DeviceOperationTest extends CameraModelTest {
 
         Image image = null;
         int i = 0, count = 0;
-        while(i++ < 100) // try 100 capture (repeat mode)
+        while (i++ < 100) // try 100 capture (repeat mode)
         {
             // expect 30 FPS...
             Thread.sleep(30);
 
             // Fetch image 1 by 1.
             image = reader.acquireNextImage();
-            if(image == null)
+            if (image == null)
                 continue;
 
-            Log.v("ndk_camera",
-                    String.format("format %d width %d height %d timestamp %d",
-                            image.getFormat(), image.getWidth(), image.getHeight(),
-                            image.getTimestamp())
-            );
+            Log.v("ndk_camera", String.format("format %d width %d height %d timestamp %d", image.getFormat(),
+                    image.getWidth(), image.getHeight(), image.getTimestamp()));
             image.close();
             count += 1;
         }
         camera.stopRepeat(); // stop after iteration
 
-        Assert.assertNotNull(image);    // ensure at least 1 image was acquired
-        Assert.assertTrue(i > count);   // !!! some images might be dropped !!!
+        Assert.assertNotNull(image); // ensure at least 1 image was acquired
+        Assert.assertTrue(i > count); // !!! some images might be dropped !!!
     }
 
     @Test
@@ -114,28 +112,30 @@ public class DeviceOperationTest extends CameraModelTest {
     }
 
     @Test
-    public void TryCapture()  throws Exception{
+    public void TryCapture() throws Exception {
         // start capture operation
         camera.capture(reader.getSurface());
 
         Thread.sleep(100);
 
         Image image = null;
-        do
-        {
+        int repeat = 0;
+        do {
             // give more time...
             Thread.sleep(30);
 
-            image = reader.acquireLatestImage();
-        }while(image == null);
+            image = reader.acquireNextImage();
+            repeat += 1;
+            if (repeat >= 50)
+                break;
+        } while (image == null);
 
+        Assert.assertTrue(repeat < 50);
         Assert.assertNotNull(image);
 
-        Log.e("ndk_camera",
-                String.format("format %d width %d height %d timestamp %d",
-                        image.getFormat(), image.getWidth(), image.getHeight(),
-                        image.getTimestamp())
-        );
+        Log.d("ndk_camera", String.format("format %d width %d height %d timestamp %d", image.getFormat(),
+                image.getWidth(), image.getHeight(), image.getTimestamp()));
+
         image.close();
         camera.stopCapture(); // stop after capture
     }
