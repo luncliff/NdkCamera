@@ -13,10 +13,20 @@ public class CameraModel {
 
     private static Device[] devices = null;
 
-    public static native void Init();
+    /**
+     *  Multiple init is safe. Only *first* invocation will take effect
+     */
+    public static synchronized native void Init();
 
+    /**
+     * Get the number of current camera devices
+     * @return 0 if initialization failed or no device confirmed
+     */
     public static native int GetDeviceCount();
 
+    /**
+     * @param devices SetDeviceData will provide appropriate internal library id
+     */
     private static native void SetDeviceData(Device[] devices);
 
     public static synchronized Device[] GetDevices() {

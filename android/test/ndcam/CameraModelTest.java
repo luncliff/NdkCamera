@@ -1,6 +1,7 @@
 package ndcam;
 
 import android.Manifest;
+import android.hardware.camera2.CameraCharacteristics;
 import android.media.Image;
 import android.support.test.rule.GrantPermissionRule;
 import android.support.test.runner.AndroidJUnit4;
@@ -30,7 +31,11 @@ public class CameraModelTest {
     public void AcquireDevices() {
         for (Device device : CameraModel.GetDevices()) {
             Assert.assertTrue(device.id != -1);
-            Assert.assertTrue(device.isFront() || device.isBack() || device.isExternal());
+            Assert.assertTrue(
+                    device.facing() == CameraCharacteristics.LENS_FACING_FRONT ||
+                    device.facing() == CameraCharacteristics.LENS_FACING_BACK ||
+                    device.facing() == CameraCharacteristics.LENS_FACING_EXTERNAL
+            );
         }
     }
 

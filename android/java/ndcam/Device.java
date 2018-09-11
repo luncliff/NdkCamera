@@ -1,49 +1,50 @@
 package ndcam;
 
+import android.hardware.camera2.CameraCharacteristics;
 import android.media.ImageReader;
 import android.view.Surface;
 
 import java.util.concurrent.Future;
 
+/**
+ *
+ * @author luncliff@gmail.com
+ */
 public class Device {
-    /**
-     * library internal identifier
-     */
+    /** library internal identifier */
     public short id = -1;
 
-    Device() {
-    }
+    Device() {}
 
-    public native boolean isFront();
+    /**
+     * @return
+     *      {@link CameraCharacteristics#LENS_FACING_FRONT } ||
+     *      {@link CameraCharacteristics#LENS_FACING_BACK } ||
+     *      {@link CameraCharacteristics#LENS_FACING_EXTERNAL }
+     */
+    public native byte facing();
 
-    public native boolean isBack();
+    native void open() throws RuntimeException;
+    public native void close();
 
-    public native boolean isExternal();
-
-    private native void startRepeat(Surface surface);
-
-    private native void startCapture(Surface surface);
-
-    private native void open() throws RuntimeException;
-
-    public void repeat(ImageReader reader) {
+    /**
+     * User of the Camera 2 API must provide valid Surface.
+     * @param surface output surface for Camera 2 API
+     */
+    public void repeat(Surface surface) throws RuntimeException{
         this.open();
-
-        // TODO: default value?
-        // 512,512, ImageFormat.YUV_420_888, 30;
-
-        // camera will provide image to given surface
-        Surface surface = reader.getSurface();
         startRepeat(surface);
     }
+    private native void startRepeat(Surface surface);
+    public native void stopRepeat();
 
-    public void capture(ImageReader reader) {
+    public void capture(Surface surface) throws RuntimeException {
         this.open();
-
         // camera will provide image to given surface
-        Surface surface = reader.getSurface();
         startCapture(surface);
-    }
 
-    public native void stop();
+        throw new RuntimeException("Not implemented");
+    }
+    private native void startCapture(Surface surface);
+    public native void stopCapture();
 }
