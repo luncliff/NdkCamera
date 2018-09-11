@@ -7,7 +7,6 @@ import android.view.Surface;
 import java.util.concurrent.Future;
 
 /**
- *
  * @author luncliff@gmail.com
  */
 public class Device {
@@ -42,8 +41,6 @@ public class Device {
         this.open();
         // camera will provide image to given surface
         startCapture(surface);
-
-        throw new RuntimeException("Not implemented");
     }
     private native void startCapture(Surface surface);
     public native void stopCapture();

@@ -1,14 +1,11 @@
 package ndcam;
 
-import android.graphics.Camera;
 import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraCharacteristics;
-import android.media.CameraProfile;
 import android.media.Image;
 import android.media.ImageReader;
 import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
-import android.view.Surface;
 
 import junit.framework.Assert;
 
@@ -27,12 +24,11 @@ public class DeviceOperationTest extends CameraModelTest {
 
     @Before
     public void CreateImageReader() {
-        // TODO: default value?
-        // 1280 * 720
         // 1920 * 1080, 30 FPS, YCbCr 4:2:0(YUV_420_888)
         reader = ImageReader.newInstance(
                 1920, 1080, ImageFormat.YUV_420_888,
-                30);
+                30 // reserve some images
+        );
 
         Assert.assertNotNull(reader);
     }
@@ -53,9 +49,11 @@ public class DeviceOperationTest extends CameraModelTest {
     }
 
     @After
-    public void CloseDevice(){
+    public void CloseDevice() throws  Exception{
         Assert.assertNotNull(camera);
         camera.close();
+        // wait for camera framework to stop completely
+        Thread.sleep(500);
     }
 
     @Test
@@ -116,25 +114,29 @@ public class DeviceOperationTest extends CameraModelTest {
     }
 
     @Test
-    public void TryCapture() {
+    public void TryCapture()  throws Exception{
         // start capture operation
         camera.capture(reader.getSurface());
+
+        Thread.sleep(100);
 
         Image image = null;
         do
         {
+            // give more time...
+            Thread.sleep(30);
+
             image = reader.acquireLatestImage();
         }while(image == null);
 
         Assert.assertNotNull(image);
 
-        Log.v("ndk_camera",
+        Log.e("ndk_camera",
                 String.format("format %d width %d height %d timestamp %d",
                         image.getFormat(), image.getWidth(), image.getHeight(),
                         image.getTimestamp())
         );
         image.close();
-
         camera.stopCapture(); // stop after capture
     }
 }
