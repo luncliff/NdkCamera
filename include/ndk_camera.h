@@ -51,7 +51,7 @@
 
 #include <magic/coroutine.hpp>
 
-constexpr auto tag = "ndk_camera";
+static constexpr auto tag_ndk_camera = "ndk_camera";
 
 using NativeWindow = std::unique_ptr<ANativeWindow,
                                      void (*)(ANativeWindow *)>;
@@ -67,28 +67,33 @@ using CameraOutputTarget = std::unique_ptr<ACameraOutputTarget,
 
 /**
  * Library context. Supports auto releasing and facade for features
+ * 
+ * !!! All NDK type members must be public. There will be no encapsulation !!!
  */
-struct context_t
+struct context_t final
 {
     // without external camera, 2 is enough(back + front).
     // But we will use more since there might be multiple(for now, 2) external camera...
     static constexpr auto max_camera_count = 4;
 
   public:
+    // Android camera manager. After the context is initialized, this must be non-null
+    // if this variable is null, then the context is considered as
+    // 'not initailized' and all operation *can* be ignored
     ACameraManager *manager = nullptr;
     ACameraIdList *id_list = nullptr;
-    //    ACaptureSessionOutputContainer* container = nullptr;
-    //    ACaptureSessionOutput* output = nullptr;
 
     // cached metadata
     std::array<ACameraMetadata *, max_camera_count> metadata_set{};
 
+    //
     // even though android system limits the number of maximum open camera device,
     // we will consider multiple camera are working concurrently.
     //
     // if element is nullptr, it means the device is not open.
     std::array<ACameraDevice *, max_camera_count> device_set{};
 
+    // if there is no session, session pointer will be null
     std::array<ACameraCaptureSession *, max_camera_count> session_set{};
 
     // sequence number from capture session
@@ -96,6 +101,7 @@ struct context_t
 
   public:
     context_t() noexcept = default;
+    // copy-move is disabled
     context_t(const context_t &) = delete;
     context_t(context_t &&) = delete;
     context_t &operator=(const context_t &) = delete;
@@ -122,8 +128,8 @@ struct context_t
         ACameraCaptureSession_stateCallbacks &on_session_changed,
         ACameraCaptureSession_captureCallbacks &on_capture_event) noexcept
         -> camera_status_t;
-
     void stop_repeat(uint16_t id) noexcept;
+
     auto start_capture(
         uint16_t id,
         ANativeWindow *window,
@@ -138,6 +144,8 @@ struct context_t
     uint16_t get_facing(uint16_t id) noexcept;
 };
 
+// device callbacks
+
 _HIDDEN_ void context_on_device_disconnected(
     context_t &context,
     ACameraDevice *device) noexcept;
@@ -146,9 +154,12 @@ _HIDDEN_ void context_on_device_error(
     context_t &context,
     ACameraDevice *device, int error) noexcept;
 
+// session state callbacks
+
 _HIDDEN_ void context_on_session_active(
     context_t &context,
     ACameraCaptureSession *session) noexcept;
+
 _HIDDEN_ void context_on_session_closed(
     context_t &context,
     ACameraCaptureSession *session) noexcept;
@@ -156,6 +167,8 @@ _HIDDEN_ void context_on_session_closed(
 _HIDDEN_ void context_on_session_ready(
     context_t &context,
     ACameraCaptureSession *session) noexcept;
+
+// capture callbacks
 
 _HIDDEN_ void context_on_capture_started(
     context_t &context, ACameraCaptureSession *session,
@@ -176,17 +189,21 @@ _HIDDEN_ void context_on_capture_failed(
     context_t &context, ACameraCaptureSession *session,
     ACaptureRequest *request,
     ACameraCaptureFailure *failure) noexcept;
+
 _HIDDEN_ void context_on_capture_buffer_lost(
     context_t &context, ACameraCaptureSession *session,
     ACaptureRequest *request,
-    ANativeWindow *window, int64_t frameNumber) noexcept;
+    ANativeWindow *window, int64_t frame_number) noexcept;
 
 _HIDDEN_ void context_on_capture_sequence_abort(
     context_t &context, ACameraCaptureSession *session,
-    int sequenceId) noexcept;
+    int sequence_id) noexcept;
+
 _HIDDEN_ void context_on_capture_sequence_complete(
     context_t &context, ACameraCaptureSession *session,
-    int sequenceId, int64_t frameNumber) noexcept;
+    int sequence_id, int64_t frame_number) noexcept;
+
+// status - error string map
 
 _HIDDEN_ auto camera_error_message(camera_status_t status) noexcept
     -> const char *;

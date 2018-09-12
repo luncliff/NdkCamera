@@ -20,27 +20,36 @@ PROLOGUE void jni_on_load(void) noexcept
     auto check_coroutine_available = [=]() -> magic::unplug {
         co_await magic::stdex::suspend_never{};
         // see fmt::format for usage
-        logger->info("{}.{}", tag, nullptr);
+        logger->info("{}.{}", tag_ndk_camera, nullptr);
     };
 
     // log will print thread id and message
     spdlog::set_pattern("[thread %t] %v");
-    logger = spdlog::android_logger_st("android", tag);
+    logger = spdlog::android_logger_st("android", tag_ndk_camera);
 
     check_coroutine_available();
 }
 
 // - Note
 //      Group of java native type variables
-struct _HIDDEN_ java_type_set_t
+// - Reference
+//      https://programming.guide/java/list-of-java-exceptions.html
+struct _HIDDEN_ java_type_set_t final
 {
-    jclass illegal_argument_exception{};
     jclass runtime_exception{};
+    jclass illegal_argument_exception{};
+    jclass illegal_state_exception{};
+    jclass unsupported_operation_exception{};
+    jclass index_out_of_bounds_exception{};
 
     jclass device_t{};
     jfieldID device_id_f{};
 };
 java_type_set_t java{};
+
+// ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
+
+// device callbacks
 
 void context_on_device_disconnected(
     context_t &context,
@@ -60,6 +69,8 @@ void context_on_device_error(
     return;
 }
 
+// session state callbacks
+
 void context_on_session_active(
     context_t &context,
     ACameraCaptureSession *session) noexcept
@@ -73,11 +84,6 @@ void context_on_session_closed(
     ACameraCaptureSession *session) noexcept
 {
     logger->warn("on_session_closed");
-    //    auto it = std::find(context.session_set.begin(), context.session_set.end(), session);
-    //    // found
-    //    if(it != context.session_set.end())
-    //        *it = nullptr;
-
     return;
 }
 
@@ -88,6 +94,8 @@ void context_on_session_ready(
     logger->info("on_session_ready");
     return;
 }
+
+// capture callbacks
 
 void context_on_capture_started(
     context_t &context, ACameraCaptureSession *session,
@@ -116,6 +124,7 @@ void context_on_capture_progressed(
     logger->debug("context_on_capture_progressed: {}", time_point);
     return;
 }
+
 void context_on_capture_completed(
     context_t &context, ACameraCaptureSession *session,
     ACaptureRequest *request,
@@ -147,6 +156,7 @@ void context_on_capture_failed(
                   failure->wasImageCaptured);
     return;
 }
+
 void context_on_capture_buffer_lost(
     context_t &context, ACameraCaptureSession *session,
     ACaptureRequest *request,
@@ -178,26 +188,36 @@ context_t context{};
 
 void Java_ndcam_CameraModel_Init(JNIEnv *env, jclass type) noexcept
 {
+    uint16_t num_camera = 0;
+    camera_status_t status = ACAMERA_OK;
+
     // already initialized. do nothing
     if (context.manager != nullptr)
         return;
 
-    camera_status_t status = ACAMERA_OK;
     assert(logger != nullptr);
 
     // Find exception class information (type info)
-    java.illegal_argument_exception = env->FindClass(
-        "java/lang/IllegalArgumentException");
     java.runtime_exception = env->FindClass(
         "java/lang/RuntimeException");
+    java.illegal_argument_exception = env->FindClass(
+        "java/lang/IllegalArgumentException");
+    java.illegal_state_exception = env->FindClass(
+        "java/lang/IllegalStateException");
+    java.unsupported_operation_exception = env->FindClass(
+        "java/lang/UnsupportedOperationException");
+    java.index_out_of_bounds_exception = env->FindClass(
+        "java/lang/IndexOutOfBoundsException");
 
     // !!! Since we can't throw if this info is null, call assert !!!
-    assert(java.illegal_argument_exception != nullptr);
     assert(java.runtime_exception != nullptr);
+    assert(java.illegal_argument_exception != nullptr);
+    assert(java.illegal_state_exception != nullptr);
+    assert(java.unsupported_operation_exception != nullptr);
+    assert(java.index_out_of_bounds_exception != nullptr);
 
     context.release();
 
-    // auto managerHolder = CameraManager{ACameraManager_create(), ACameraManager_delete};
     context.manager = ACameraManager_create();
     assert(context.manager != nullptr);
 
@@ -208,10 +228,15 @@ void Java_ndcam_CameraModel_Init(JNIEnv *env, jclass type) noexcept
 
     // https://developer.android.com/reference/android/hardware/camera2/CameraMetadata
     // https://android.googlesource.com/platform/frameworks/av/+/2e19c3c/services/camera/libcameraservice/camera2/CameraMetadata.h
-    for (uint16_t i = 0u; i < context.id_list->numCameras; ++i)
+    num_camera = context.id_list->numCameras;
+    // library must reserve enough space to support
+    assert(num_camera <= context_t::max_camera_count);
+
+    for (uint16_t i = 0u; i < num_camera; ++i)
     {
+        const char *cam_id = context.id_list->cameraIds[i];
         status = ACameraManager_getCameraCharacteristics(
-            context.manager, context.id_list->cameraIds[i],
+            context.manager, cam_id,
             std::addressof(context.metadata_set[i]));
 
         if (status == ACAMERA_OK)

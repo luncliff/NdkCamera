@@ -11,20 +11,11 @@ std::shared_ptr<spdlog::logger> logger{};
 
 void context_t::release() noexcept
 {
-    for (auto &session : session_set)
-        if (session)
-        {
-            ACameraCaptureSession_close(session);
-            session = nullptr;
-        }
+    // close all devices
+    for (uint16_t id = 0u; id < max_camera_count; ++id)
+        close_device(id);
 
-    for (auto &device : device_set)
-        if (device)
-        {
-            ACameraDevice_close(device);
-            device = nullptr;
-        }
-
+    // release all metadata
     for (auto &meta : metadata_set)
         if (meta)
         {
@@ -32,17 +23,20 @@ void context_t::release() noexcept
             meta = nullptr;
         }
 
+    // remove id list
     if (id_list)
         ACameraManager_deleteCameraIdList(id_list);
     id_list = nullptr;
 
+    // release manager (camera service)
     if (manager)
         ACameraManager_delete(manager);
     manager = nullptr;
 }
 
-camera_status_t context_t::open_device(uint16_t id,
-                                       ACameraDevice_StateCallbacks &callbacks) noexcept
+camera_status_t
+context_t::open_device(uint16_t id,
+                       ACameraDevice_StateCallbacks &callbacks) noexcept
 {
     auto &device = this->device_set[id];
     auto status =
@@ -56,14 +50,15 @@ camera_status_t context_t::open_device(uint16_t id,
 void context_t::close_device(uint16_t id) noexcept
 {
     // close session
-    auto& session = this->session_set[id];
-    if(session)
+    auto &session = this->session_set[id];
+    if (session)
     {
         logger->warn("session for device {} is alive. abort/closing...", id);
 
         // Abort all kind of requests
         ACameraCaptureSession_abortCaptures(session);
         ACameraCaptureSession_stopRepeating(session);
+        // close
         ACameraCaptureSession_close(session);
         session = nullptr;
     }
@@ -83,7 +78,8 @@ void context_t::close_device(uint16_t id) noexcept
     }
 }
 
-camera_status_t context_t::start_repeat(
+camera_status_t
+context_t::start_repeat(
     uint16_t id,
     ANativeWindow *window,
     ACameraCaptureSession_stateCallbacks &on_session_changed,
@@ -99,6 +95,7 @@ camera_status_t context_t::start_repeat(
             return target;
         }(),
         ACameraOutputTarget_free};
+    assert(target.get() != nullptr);
 
     // ---- capture request (preview) ----
     auto request = CaptureRequest{
@@ -114,6 +111,7 @@ camera_status_t context_t::start_repeat(
             return ptr;
         }(),
         ACaptureRequest_free};
+    assert(request.get() != nullptr);
 
     // `ACaptureRequest` == how to capture
     // detailed config comes here...
@@ -122,9 +120,9 @@ camera_status_t context_t::start_repeat(
     // -
 
     // designate target surface in request
-    ACaptureRequest_addTarget(request.get(),
-                              target.get());
-
+    status = ACaptureRequest_addTarget(request.get(),
+                                       target.get());
+    assert(status == ACAMERA_OK);
     // ---- session output ----
 
     // container for multiplexing of session output
@@ -135,6 +133,7 @@ camera_status_t context_t::start_repeat(
                     return container; }(),
         // free container
         ACaptureSessionOutputContainer_free};
+    assert(container.get() != nullptr);
 
     // session output
     auto output = CaptureSessionOutput{
@@ -144,9 +143,11 @@ camera_status_t context_t::start_repeat(
             return output;
         }(),
         ACaptureSessionOutput_free};
+    assert(output.get() != nullptr);
 
-    ACaptureSessionOutputContainer_add(container.get(),
-                                       output.get());
+    status = ACaptureSessionOutputContainer_add(container.get(),
+                                                output.get());
+    assert(status == ACAMERA_OK);
 
     // ---- create a session ----
     status = ACameraDevice_createCaptureSession(
@@ -156,19 +157,21 @@ camera_status_t context_t::start_repeat(
     assert(status == ACAMERA_OK);
 
     // ---- set request ----
-    ACaptureRequest *batch_request[1]{};
+    std::array<ACaptureRequest *, 1> batch_request{};
     batch_request[0] = request.get();
 
     status = ACameraCaptureSession_setRepeatingRequest(
         this->session_set[id],
-        std::addressof(on_capture_event), 1, batch_request,
+        std::addressof(on_capture_event), batch_request.size(), batch_request.data(),
         std::addressof(this->seq_id_set[id]));
     assert(status == ACAMERA_OK);
 
-    ACaptureSessionOutputContainer_remove(container.get(),
-                                          output.get());
-    ACaptureRequest_removeTarget(request.get(),
-                                 target.get());
+    status = ACaptureSessionOutputContainer_remove(container.get(),
+                                                   output.get());
+    assert(status == ACAMERA_OK);
+    status = ACaptureRequest_removeTarget(request.get(),
+                                          target.get());
+    assert(status == ACAMERA_OK);
 
     return status;
 }
@@ -189,7 +192,8 @@ void context_t::stop_repeat(uint16_t id) noexcept
     this->seq_id_set[id] = CAPTURE_SEQUENCE_ID_NONE;
 }
 
-camera_status_t context_t::start_capture(
+camera_status_t
+context_t::start_capture(
     uint16_t id,
     ANativeWindow *window,
     ACameraCaptureSession_stateCallbacks &on_session_changed,
@@ -205,21 +209,23 @@ camera_status_t context_t::start_capture(
             return target;
         }(),
         ACameraOutputTarget_free};
+    assert(target.get() != nullptr);
 
     // ---- capture request (preview) ----
     auto request = CaptureRequest{
-        [=]() {
+        [](ACameraDevice *device) {
             ACaptureRequest *ptr{};
             // capture as a preview
             // TEMPLATE_RECORD, TEMPLATE_PREVIEW, TEMPLATE_MANUAL,
             const auto status =
                 ACameraDevice_createCaptureRequest(
-                    this->device_set[id], TEMPLATE_STILL_CAPTURE,
+                    device, TEMPLATE_STILL_CAPTURE,
                     &ptr);
             assert(status == ACAMERA_OK);
             return ptr;
-        }(),
+        }(this->device_set[id]),
         ACaptureRequest_free};
+    assert(request.get() != nullptr);
 
     // `ACaptureRequest` == how to capture
     // detailed config comes here...
@@ -228,8 +234,9 @@ camera_status_t context_t::start_capture(
     // -
 
     // designate target surface in request
-    ACaptureRequest_addTarget(request.get(),
-                              target.get());
+    status = ACaptureRequest_addTarget(request.get(),
+                                       target.get());
+    assert(status == ACAMERA_OK);
     // defer    ACaptureRequest_removeTarget;
 
     // ---- session output ----
@@ -242,6 +249,7 @@ camera_status_t context_t::start_capture(
                     return container; }(),
         // free container
         ACaptureSessionOutputContainer_free};
+    assert(container.get() != nullptr);
 
     // session output
     auto output = CaptureSessionOutput{
@@ -251,9 +259,12 @@ camera_status_t context_t::start_capture(
             return output;
         }(),
         ACaptureSessionOutput_free};
+    assert(output.get() != nullptr);
 
-    ACaptureSessionOutputContainer_add(container.get(),
-                                       output.get());
+    status = ACaptureSessionOutputContainer_add(container.get(),
+                                                output.get());
+    assert(status == ACAMERA_OK);
+    // defer ACaptureSessionOutputContainer_remove
 
     // ---- create a session ----
     status = ACameraDevice_createCaptureSession(
@@ -263,19 +274,22 @@ camera_status_t context_t::start_capture(
     assert(status == ACAMERA_OK);
 
     // ---- set request ----
-    ACaptureRequest *batch_request[1]{};
+    std::array<ACaptureRequest *, 1> batch_request{};
     batch_request[0] = request.get();
 
     status = ACameraCaptureSession_capture(
         this->session_set[id],
-        std::addressof(on_capture_event), 1, batch_request,
+        std::addressof(on_capture_event), batch_request.size(), batch_request.data(),
         std::addressof(this->seq_id_set[id]));
     assert(status == ACAMERA_OK);
 
-    ACaptureSessionOutputContainer_remove(container.get(),
-                                          output.get());
-    ACaptureRequest_removeTarget(request.get(),
-                                 target.get());
+    status = ACaptureSessionOutputContainer_remove(container.get(),
+                                                   output.get());
+    assert(status == ACAMERA_OK);
+
+    status = ACaptureRequest_removeTarget(request.get(),
+                                          target.get());
+    assert(status == ACAMERA_OK);
 
     return status;
 }
@@ -296,20 +310,23 @@ void context_t::stop_capture(uint16_t id) noexcept
     this->seq_id_set[id] = 0;
 }
 
-// ACAMERA_LENS_FACING_FRONT
-// ACAMERA_LENS_FACING_BACK
-// ACAMERA_LENS_FACING_EXTERNAL
-uint16_t context_t::get_facing(uint16_t id) noexcept
+auto context_t::get_facing(uint16_t id) noexcept
+    -> uint16_t
 {
     // const ACameraMetadata*
     const auto *metadata = metadata_set[id];
 
-    ACameraMetadata_const_entry lens_facing{};
+    ACameraMetadata_const_entry entry{};
     ACameraMetadata_getConstEntry(metadata,
-                                  ACAMERA_LENS_FACING, &lens_facing);
+                                  ACAMERA_LENS_FACING, &entry);
 
-    const auto *ptr = lens_facing.data.u8;
-    return *ptr;
+    // lens facing
+    const auto facing = *(entry.data.u8);
+    assert(facing == ACAMERA_LENS_FACING_FRONT || // ACAMERA_LENS_FACING_FRONT
+           facing == ACAMERA_LENS_FACING_BACK ||  // ACAMERA_LENS_FACING_BACK
+           facing == ACAMERA_LENS_FACING_EXTERNAL // ACAMERA_LENS_FACING_EXTERNAL
+    );
+    return facing;
 }
 
 #ifdef _WIN32

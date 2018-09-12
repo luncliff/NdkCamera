@@ -1,3 +1,9 @@
+# ---------------------------------------------------------------------------
+#
+#  Author
+#      luncliff@gmail.com
+#
+# ---------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.1)
 
 # ------------ Dependency ------------
@@ -59,7 +65,7 @@ message(STATUS "  ABI     \t: ${ANDROID_ABI}")          # armeabi-v7a or else
 message(STATUS "  NDK Path\t: ${ANDROID_NDK}")          # Path/to/NDK
 message(STATUS "  STL     \t: ${ANDROID_STL}")          # expect c++_shared
 
-# <asm/types.h> 를 찾는다. 현재는 armv7, armv8, x86에 대해서만. 
+# path for <asm/types.h>
 if(${ANDROID_ABI} STREQUAL "arm64-v8a")
     target_include_directories(${PROJECT_NAME}
     PRIVATE
@@ -80,6 +86,8 @@ endif()
 # STL: GNU Shared
 if(${ANDROID_STL} STREQUAL "gnustl_shared")
     message(FATAL_ERROR "This library doesn't support ${ANDROID_STL}")
+    return(1)
+
     target_include_directories(${PROJECT_NAME}
     PRIVATE
         ${ANDROID_NDK}/sources/cxx-stl/gnu-libstdc++/include/ 
@@ -99,7 +107,7 @@ elseif(${ANDROID_STL} STREQUAL "c++_shared")
 endif()
 
 target_include_directories(${PROJECT_NAME}
-    PRIVATE
+PRIVATE
     # JNI
     ${ANDROID_NDK}/sysroot/usr/include/ 
     ${ANDROID_NDK}/sources/android/support/include/
@@ -116,13 +124,14 @@ target_include_directories(${PROJECT_NAME}
 #     ${PROJECT_DIR}/android/jniLibs/${ANDROID_ABI}
 # )
 
-# Java Native Interface 구현들을 추가로 빌드
+# Code for JNI
 target_sources(${PROJECT_NAME}
 PRIVATE
     ${PROJECT_DIR}/android/jni/adapter.h
     ${PROJECT_DIR}/android/jni/adapter.cpp
 )
 
+# Make <ndk_camera.h> visible
 target_include_directories(${PROJECT_NAME}
 PUBLIC
     ${PROJECT_DIR}/include    
