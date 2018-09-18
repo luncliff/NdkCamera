@@ -69,6 +69,13 @@ android {
             }
         }
     }
+    
+    // Pick first one from duplicated shared objects.
+    // https://google.github.io/android-gradle-dsl/current/com.android.build.gradle.internal.dsl.PackagingOptions.html
+    // https://stackoverflow.com/questions/44342455/more-than-one-file-was-found-with-os-independent-path-meta-inf-license
+    packagingOptions {
+        pickFirst 'lib/**'
+    }
 
     // Custom SourceSet
     //  - Source path/directory for Gradle
