@@ -270,8 +270,35 @@ void Java_ndcam_CameraModel_SetDeviceData(JNIEnv *env, jclass type,
     const auto count = context.id_list->numCameras;
     assert(count == env->GetArrayLength(devices));
 
+
+    // https://developer.android.com/ndk/reference/group/camera
     for (short index = 0; index < count; ++index)
     {
+        ACameraMetadata_const_entry entry{};
+        ACameraMetadata_getConstEntry(context.metadata_set[index],
+                                      ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS, &entry);
+        for (int i = 0; i < entry.count; i += 4)
+        {
+            const int32_t direction = entry.data.i32[i + 3];
+            if(direction == ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_INPUT)
+                ;
+            if(direction == ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT)
+                ;
+
+            const int32_t format = entry.data.i32[i + 0];
+            const int32_t width = entry.data.i32[i + 1];
+            const int32_t height = entry.data.i32[i + 2];
+
+            if (format == AIMAGE_FORMAT_PRIVATE)
+                logger->debug("Private: {} {} ", width, height);
+            if (format == AIMAGE_FORMAT_YUV_420_888)
+                logger->debug("YUV_420_888: {} {} ", width, height);
+            if (format == AIMAGE_FORMAT_JPEG)
+                logger->debug("JPEG: {} {} ", width, height);
+            if (format == AIMAGE_FORMAT_RAW16)
+                logger->debug("Raw16: {} {} ", width, height);
+        }
+
         jobject device = env->GetObjectArrayElement(devices, index);
         assert(device != nullptr);
 
@@ -349,6 +376,7 @@ void Java_ndcam_Device_startRepeat(JNIEnv *env, jobject instance,
     // ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
     auto window = NativeWindow{ANativeWindow_fromSurface(env, surface),
                                ANativeWindow_release};
+    assert(window.get() != nullptr);
 
     ACameraCaptureSession_stateCallbacks on_state_changed{};
     on_state_changed.context = std::addressof(context);
@@ -414,6 +442,7 @@ void Java_ndcam_Device_startCapture(JNIEnv *env, jobject instance,
     // ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
     auto window = NativeWindow{ANativeWindow_fromSurface(env, surface),
                                ANativeWindow_release};
+    assert(window.get() != nullptr);
 
     ACameraCaptureSession_stateCallbacks on_state_changed{};
     on_state_changed.context = std::addressof(context);

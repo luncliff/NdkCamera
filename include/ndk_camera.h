@@ -36,6 +36,8 @@
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 
+#include <media/NdkImage.h>
+
 #include <camera/NdkCameraCaptureSession.h>
 #include <camera/NdkCameraDevice.h>
 #include <camera/NdkCameraError.h>
@@ -53,17 +55,22 @@
 
 static constexpr auto tag_ndk_camera = "ndk_camera";
 
-using NativeWindow = std::unique_ptr<ANativeWindow,
-                                     void (*)(ANativeWindow *)>;
-using CaptureSessionOutputContainer = std::unique_ptr<ACaptureSessionOutputContainer,
-                                                      void (*)(ACaptureSessionOutputContainer *)>;
-using CaptureSessionOutput = std::unique_ptr<ACaptureSessionOutput,
-                                             void (*)(ACaptureSessionOutput *)>;
-using CaptureRequest = std::unique_ptr<ACaptureRequest,
-                                       void (*)(ACaptureRequest *)>;
+using NativeWindow =
+    std::unique_ptr<ANativeWindow,
+                    void (*)(ANativeWindow *)>;
+using CaptureSessionOutputContainer =
+    std::unique_ptr<ACaptureSessionOutputContainer,
+                    void (*)(ACaptureSessionOutputContainer *)>;
+using CaptureSessionOutput =
+    std::unique_ptr<ACaptureSessionOutput,
+                    void (*)(ACaptureSessionOutput *)>;
+using CaptureRequest =
+    std::unique_ptr<ACaptureRequest,
+                    void (*)(ACaptureRequest *)>;
 
-using CameraOutputTarget = std::unique_ptr<ACameraOutputTarget,
-                                           void (*)(ACameraOutputTarget *)>;
+using CameraOutputTarget =
+    std::unique_ptr<ACameraOutputTarget,
+                    void (*)(ACameraOutputTarget *)>;
 
 /**
  * Library context. Supports auto releasing and facade for features
