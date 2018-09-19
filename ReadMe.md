@@ -1,9 +1,10 @@
 
-# NDK Camera Example
-[Android Camera 2 API](https://www.youtube.com/watch?v=Bi4QjMfSOE0)
+# NDK Camera
+Simplified [Android Camera 2 API](https://www.youtube.com/watch?v=Bi4QjMfSOE0).   
+Available for both Java/JNI.
 
   - API level: 24+
-  - ...
+  - NDK
 
 ### Reference
  - [API Reference](https://developer.android.com/ndk/reference/group/camera)
@@ -17,15 +18,15 @@
 
 ## How to
 ### Build
-> TBA
+For **Windows** environment, latest [Android Studio](https://developer.android.com/studio/) is recommended.   
+For **Linux/MacOS**, [Gradle 4.4+](https://gradle.org/) will be enough.   
 
 ```console
-$ gradle assemble               # Build
+$ gradle assemble               # Build: libndk_camera.so & NdkCamera.aar
 ```
 
 ### Test
-For general usage, please reference the test codes. [android/test/](./android/test)
-
+For general usage, please reference the [test codes](./android/test/ndcam/). 
 ```console
 $ gradle connectedAndroidTest   # Run test
 ```
