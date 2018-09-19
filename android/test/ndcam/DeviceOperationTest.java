@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -153,11 +154,53 @@ public class DeviceOperationTest extends CameraModelTest {
 
         Assert.assertTrue(repeat < 50);
         Assert.assertNotNull(image);
+        camera.stopCapture(); // stop after capture
 
         Log.d("ndk_camera", String.format("format %d width %d height %d timestamp %d", image.getFormat(),
                 image.getWidth(), image.getHeight(), image.getTimestamp()));
 
         image.close();
+    }
+
+    public native void LogImageInfo(ImageReader reader);
+
+    @Test
+    public void CapturedImagePlanes() throws Exception {
+        // start capture operation
+        camera.capture(reader.getSurface());
+
+        Thread.sleep(100);
+
+        LogImageInfo(reader);
+
         camera.stopCapture(); // stop after capture
+
+//        Image.Plane[] planes = image.getPlanes();
+//        Assert.assertNotNull(planes);
+//        Log.d("ndk_camera", String.format("plane[] length %d", planes.length));
+//        for(Image.Plane plane : planes)
+//        {
+//            int ps = plane.getPixelStride();
+//            int rs = plane.getRowStride();
+//            Assert.assertTrue(ps > 0);
+//            Assert.assertTrue(rs > 0);
+//            Log.d("ndk_camera",
+//                    String.format("plane pixel_stride %d row_stride %d", ps, rs)
+//            );
+//
+//            ByteBuffer buffer = plane.getBuffer();
+//            Assert.assertNotNull(buffer);
+//            Log.d("ndk_camera",
+//                    String.format("plane buffer direct %b remaining %d ", buffer.isDirect(),buffer.remaining())
+//            );
+//
+//            if(buffer.remaining() == 1920 * 1080)
+//                continue;
+//            byte[] pixelData = new byte[buffer.remaining() + 1];
+//            buffer.get(pixelData);
+//            Assert.assertNotNull(pixelData);
+//        }
+//        image.close();
+
     }
 }

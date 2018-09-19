@@ -37,6 +37,7 @@
 #include <android/native_window_jni.h>
 
 #include <media/NdkImage.h>
+#include <media/NdkImageReader.h>
 
 #include <camera/NdkCameraCaptureSession.h>
 #include <camera/NdkCameraDevice.h>

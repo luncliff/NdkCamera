@@ -168,6 +168,6 @@ target_compile_definitions(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} 
 PUBLIC
     ${CMAKE_DL_LIBS} cppmagic
-    android log camera2ndk
+    android log camera2ndk mediandk
 )
 

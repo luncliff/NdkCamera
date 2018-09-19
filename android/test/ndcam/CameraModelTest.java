@@ -18,7 +18,8 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class CameraModelTest {
     @Rule
-    public GrantPermissionRule cameraPermission = GrantPermissionRule.grant(Manifest.permission.CAMERA);
+    public GrantPermissionRule useCamera = GrantPermissionRule.grant(
+            Manifest.permission.CAMERA);
 
     @Before
     public void TryInit() {
