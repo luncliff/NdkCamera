@@ -22,11 +22,14 @@ For **Windows** environment, latest [Android Studio](https://developer.android.c
 For **Linux/MacOS**, [Gradle 4.4+](https://gradle.org/) will be enough.   
 
 ```console
+$ git clone https://github.com/luncliff/NdkCamera
+$ cd ./NdkCamera
 $ gradle assemble               # Build: libndk_camera.so & NdkCamera.aar
 ```
 
 ### Test
-For general usage, please reference the [test codes](./android/test/ndcam/). 
+Connect your device and run the test with Gradle.
+Please reference the [test codes](./android/test/ndcam/). 
 ```console
 $ gradle connectedAndroidTest   # Run test
 ```
