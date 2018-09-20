@@ -12,6 +12,7 @@ import android.view.Surface;
  * {@link android.hardware.camera2.CameraCaptureSession}
  *
  * TODO - capture request with configuration
+ * TODO - multiple surface request
  *
  * @author luncliff@gmail.com
  */

@@ -30,18 +30,13 @@ import static org.junit.Assert.assertNotNull;
  * @author luncliff@gmail.com
  */
 @RunWith(AndroidJUnit4.class)
-public class TestBackbone
-{
+public class TestBackbone {
     @Rule
-    public GrantPermissionRule useCamera = GrantPermissionRule.grant(
-            Manifest.permission.CAMERA);
+    public GrantPermissionRule useCamera = GrantPermissionRule.grant(Manifest.permission.CAMERA);
     @Rule
-    public GrantPermissionRule writeStorage = GrantPermissionRule.grant(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE);
+    public GrantPermissionRule writeStorage = GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE);
     @Rule
-    public GrantPermissionRule readStorage = GrantPermissionRule.grant(
-            Manifest.permission.READ_EXTERNAL_STORAGE);
-
+    public GrantPermissionRule readStorage = GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE);
 
     protected ExecutorService executorService;
     protected Context context;
@@ -59,17 +54,13 @@ public class TestBackbone
     }
 
     @Test
-    public void AcquireAssetManager()
-    {
+    public void AcquireAssetManager() {
         AssetManager assets = context.getAssets();
         assertNotNull(assets);
         assets.close();
     }
 
-    protected static
-    Future<Image> WaitForImage(ExecutorService service,
-                               final ImageReader imageReader)
-    {
+    protected static Future<Image> WaitForImage(ExecutorService service, final ImageReader imageReader) {
         return service.submit(new Callable<Image>() {
             @Override
             public Image call() throws Exception {
@@ -77,8 +68,7 @@ public class TestBackbone
 
                 // try 50 times
                 int repeatCount = 0;
-                while(repeatCount < 50)
-                {
+                while (repeatCount < 50) {
                     // Give some time to Camera Framework in background
                     Thread.sleep(30);
 

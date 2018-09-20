@@ -92,8 +92,6 @@ public class DeviceOperationTest extends CameraModelTest {
         camera.stopRepeat();
     }
 
-
-
     @Test
     public void TryRepeatCapture() throws Exception {
         // start repeating capture operation
@@ -141,8 +139,6 @@ public class DeviceOperationTest extends CameraModelTest {
         camera.stopCapture();
     }
 
-
-
     @Test
     public void TryCapture() throws Exception {
         // start capture operation
@@ -180,55 +176,59 @@ public class DeviceOperationTest extends CameraModelTest {
         int planeSize = image.getWidth() * image.getHeight();
         int channel = planes.length;
 
-        Assert.assertTrue(
-                image.getFormat() == ImageFormat.YUV_420_888);
-        //  y           ▤ ▤ ▤ ▤
-        //              ▤ ▤ ▤ ▤
-        //              ▤ ▤ ▤ ▤
-        //              ▤ ▤ ▤ ▤
+        Assert.assertTrue(image.getFormat() == ImageFormat.YUV_420_888);
+        //
+        // Checked with monospace fonts.
+        // D2Coding, Source Code Pro, Ubuntu Mono
+        //
+        // ◯ : U+25EF // y
+        // △ : U+25B3 // cb
+        // ▢ : U+25A2 // cr
+        //
+
+        // y ◯ ◯ ◯ ◯
+        // ◯ ◯ ◯ ◯
+        // ◯ ◯ ◯ ◯
+        // ◯ ◯ ◯ ◯
         ByteBuffer yView = planes[0].getBuffer();
         // `ccView1` & `ccView2` shared *same memory* but their range is different...
-        //  cb/cr       ▤ ▤ ▤ ▤
-        //              ▤ ▤ ▤
+        // cb/cr △ ▢ △ ▢
+        // △ ▢ △
         ByteBuffer ccView1 = planes[1].getBuffer();
-        //  cb/cr         ▤ ▤ ▤
-        //              ▤ ▤ ▤ ▤
+        // cb/cr ▢ △ ▢
+        // △ ▢ △ ▢
         ByteBuffer ccView2 = planes[2].getBuffer();
 
         //
-        // Checked with monospaced fonts.
-        //      D2Coding, Monaco, Source Code Pro, Ubuntu Mono
+        // ◯ : U+25EF // empty
+        // △ : U+25B3 // filling
+        // ▢ : U+25A2 // filled
         //
-        //  ◯ : U+25EF  // empty
-        //  △ : U+25B3  // marking
-        //  ▢ : U+25A2  // marked
-        //
-        byte[] yccData= new byte[planeSize * channel / 2];
+        byte[] yccData = new byte[planeSize * channel / 2];
 
-        //  y       △ △ △ △
-        //          △ △ △ △
-        //          △ △ △ △
-        //          △ △ △ △
-        //  cb/cr   ◯ ◯ ◯ ◯
-        //          ◯ ◯ ◯ ◯
+        // y △ △ △ △
+        // △ △ △ △
+        // △ △ △ △
+        // △ △ △ △
+        // cb/cr ◯ ◯ ◯ ◯
+        // ◯ ◯ ◯ ◯
         yView.get(yccData, 0, planeSize);
 
-        //  y       ▢ ▢ ▢ ▢
-        //          ▢ ▢ ▢ ▢
-        //          ▢ ▢ ▢ ▢
-        //          ▢ ▢ ▢ ▢
-        //  cb/cr   △ ◯ ◯ ◯
-        //          ◯ ◯ ◯ ◯
-        ccView1 .get(yccData, planeSize, 1);
+        // y ▢ ▢ ▢ ▢
+        // ▢ ▢ ▢ ▢
+        // ▢ ▢ ▢ ▢
+        // ▢ ▢ ▢ ▢
+        // cb/cr △ ◯ ◯ ◯
+        // ◯ ◯ ◯ ◯
+        ccView1.get(yccData, planeSize, 1);
 
-        //  y       ▢ ▢ ▢ ▢
-        //          ▢ ▢ ▢ ▢
-        //          ▢ ▢ ▢ ▢
-        //          ▢ ▢ ▢ ▢
-        //  cb/cr   ▢ △ △ △
-        //          △ △ △ △
-        ccView2.get(yccData,
-                planeSize+1, ccView2.remaining());
+        // y ▢ ▢ ▢ ▢
+        // ▢ ▢ ▢ ▢
+        // ▢ ▢ ▢ ▢
+        // ▢ ▢ ▢ ▢
+        // cb/cr ▢ △ △ △
+        // △ △ △ △
+        ccView2.get(yccData, planeSize + 1, ccView2.remaining());
 
         image.close();
     }

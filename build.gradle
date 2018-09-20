@@ -58,8 +58,8 @@ android {
         targetSdkVersion 27
 
         // Follow native code's verson
-        versionCode 2
-        versionName "0.2"
+        versionCode 3
+        versionName "0.3"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
         // External Native build: CMake

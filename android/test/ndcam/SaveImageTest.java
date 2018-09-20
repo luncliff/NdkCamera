@@ -47,32 +47,28 @@ public class SaveImageTest extends TestBackbone {
     File publicDir;
 
     @Before
-    public void GetPublicDirectory()
-     {
+    public void GetPublicDirectory() {
         // Get the directory to save captured images
-        publicDir = Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOWNLOADS);
+        publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         Assert.assertNotNull(publicDir);
 
         publicDir = new File(publicDir, "NdCamTestDir");
-         Assert.assertNotNull(publicDir);
+        Assert.assertNotNull(publicDir);
 
-        if(publicDir.exists() == false)
+        if (publicDir.exists() == false)
             publicDir.mkdir();
-     }
+    }
 
     @Before
-    public void CheckStorageWritable()
-    {
+    public void CheckStorageWritable() {
         String state = Environment.getExternalStorageState();
-        Assert.assertTrue( Environment.MEDIA_MOUNTED.equals(state) );
+        Assert.assertTrue(Environment.MEDIA_MOUNTED.equals(state));
     }
 
     @Test
-    public void CreateFileToSave() throws Exception
-    {
+    public void CreateFileToSave() throws Exception {
         File file = new File(publicDir, "hell_world.txt");
-        if(file.exists())
+        if (file.exists())
             Assert.assertTrue(file.delete());
 
         Assert.assertTrue(file.createNewFile());
@@ -93,10 +89,9 @@ public class SaveImageTest extends TestBackbone {
     }
 
     @Test
-    public void SameImageToFile() throws Exception
-    {
+    public void SameImageToFile() throws Exception {
         File file = new File(publicDir, "image.ycc");
-        if(file.exists())
+        if (file.exists())
             Assert.assertTrue(file.delete());
 
         Assert.assertTrue(file.createNewFile());
@@ -105,15 +100,14 @@ public class SaveImageTest extends TestBackbone {
         Log.i("SameImageToFile", file.getPath());
 
         // camera image reader
-        ImageReader imageReader =ImageReader.newInstance(
-                640 , 480, ImageFormat.YUV_420_888, 2);
+        ImageReader imageReader = ImageReader.newInstance(640, 480, ImageFormat.YUV_420_888, 2);
         Assert.assertNotNull(imageReader);
 
         // Acquire camera
         CameraModel.Init();
         Device camera = null;
         for (Device device : CameraModel.GetDevices()) {
-            if(device.facing() == CameraCharacteristics.LENS_FACING_BACK)
+            if (device.facing() == CameraCharacteristics.LENS_FACING_BACK)
                 camera = device;
         }
         Assert.assertNotNull(camera);
@@ -134,18 +128,16 @@ public class SaveImageTest extends TestBackbone {
         int planeSize = image.getWidth() * image.getHeight();
         int channel = planes.length;
 
-        Assert.assertTrue(
-                image.getFormat() == ImageFormat.YUV_420_888);
+        Assert.assertTrue(image.getFormat() == ImageFormat.YUV_420_888);
 
         ByteBuffer yView = planes[0].getBuffer();
         ByteBuffer ccView1 = planes[1].getBuffer();
         ByteBuffer ccView2 = planes[2].getBuffer();
 
-        byte[] yccData= new byte[planeSize * channel / 2];
+        byte[] yccData = new byte[planeSize * channel / 2];
         yView.get(yccData, 0, planeSize);
-        ccView1 .get(yccData, planeSize, 1);
-        ccView2.get(yccData,
-                planeSize+1, ccView2.remaining());
+        ccView1.get(yccData, planeSize, 1);
+        ccView2.get(yccData, planeSize + 1, ccView2.remaining());
 
         image.close();
 
