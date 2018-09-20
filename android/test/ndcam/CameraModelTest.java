@@ -16,10 +16,7 @@ import org.junit.runner.RunWith;
  * @author luncliff@gmail.com
  */
 @RunWith(AndroidJUnit4.class)
-public class CameraModelTest {
-    @Rule
-    public GrantPermissionRule useCamera = GrantPermissionRule.grant(
-            Manifest.permission.CAMERA);
+public class CameraModelTest extends TestBackbone {
 
     @Before
     public void TryInit() {

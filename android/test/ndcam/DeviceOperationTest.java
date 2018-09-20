@@ -17,6 +17,12 @@ import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -86,6 +92,8 @@ public class DeviceOperationTest extends CameraModelTest {
         camera.stopRepeat();
     }
 
+
+
     @Test
     public void TryRepeatCapture() throws Exception {
         // start repeating capture operation
@@ -133,27 +141,18 @@ public class DeviceOperationTest extends CameraModelTest {
         camera.stopCapture();
     }
 
+
+
     @Test
     public void TryCapture() throws Exception {
         // start capture operation
         camera.capture(reader.getSurface());
-
         Thread.sleep(100);
 
-        Image image = null;
-        int repeat = 0;
-        do {
-            // give more time...
-            Thread.sleep(30);
-
-            image = reader.acquireNextImage();
-            repeat += 1;
-            if (repeat >= 50)
-                break;
-        } while (image == null);
-
-        Assert.assertTrue(repeat < 50);
+        // expect image in 2 sec
+        Image image = WaitForImage(executorService, reader).get(2, TimeUnit.SECONDS);
         Assert.assertNotNull(image);
+
         camera.stopCapture(); // stop after capture
 
         Log.d("ndk_camera", String.format("format %d width %d height %d timestamp %d", image.getFormat(),
@@ -162,45 +161,75 @@ public class DeviceOperationTest extends CameraModelTest {
         image.close();
     }
 
-    public native void LogImageInfo(ImageReader reader);
-
     @Test
-    public void CapturedImagePlanes() throws Exception {
+    public void ReadImageDataToByteArray() throws Exception {
         // start capture operation
         camera.capture(reader.getSurface());
-
         Thread.sleep(100);
 
-        LogImageInfo(reader);
+        // expect image in 2 sec
+        Image image = WaitForImage(executorService, reader).get(2, TimeUnit.SECONDS);
+        Assert.assertNotNull(image);
+        // stop after capture
+        camera.stopCapture();
 
-        camera.stopCapture(); // stop after capture
+        Image.Plane[] planes = image.getPlanes();
+        Assert.assertNotNull(planes);
+        Assert.assertTrue(planes.length == 3);
 
-//        Image.Plane[] planes = image.getPlanes();
-//        Assert.assertNotNull(planes);
-//        Log.d("ndk_camera", String.format("plane[] length %d", planes.length));
-//        for(Image.Plane plane : planes)
-//        {
-//            int ps = plane.getPixelStride();
-//            int rs = plane.getRowStride();
-//            Assert.assertTrue(ps > 0);
-//            Assert.assertTrue(rs > 0);
-//            Log.d("ndk_camera",
-//                    String.format("plane pixel_stride %d row_stride %d", ps, rs)
-//            );
-//
-//            ByteBuffer buffer = plane.getBuffer();
-//            Assert.assertNotNull(buffer);
-//            Log.d("ndk_camera",
-//                    String.format("plane buffer direct %b remaining %d ", buffer.isDirect(),buffer.remaining())
-//            );
-//
-//            if(buffer.remaining() == 1920 * 1080)
-//                continue;
-//            byte[] pixelData = new byte[buffer.remaining() + 1];
-//            buffer.get(pixelData);
-//            Assert.assertNotNull(pixelData);
-//        }
-//        image.close();
+        int planeSize = image.getWidth() * image.getHeight();
+        int channel = planes.length;
 
+        Assert.assertTrue(
+                image.getFormat() == ImageFormat.YUV_420_888);
+        //  y           ▤ ▤ ▤ ▤
+        //              ▤ ▤ ▤ ▤
+        //              ▤ ▤ ▤ ▤
+        //              ▤ ▤ ▤ ▤
+        ByteBuffer yView = planes[0].getBuffer();
+        // `ccView1` & `ccView2` shared *same memory* but their range is different...
+        //  cb/cr       ▤ ▤ ▤ ▤
+        //              ▤ ▤ ▤
+        ByteBuffer ccView1 = planes[1].getBuffer();
+        //  cb/cr         ▤ ▤ ▤
+        //              ▤ ▤ ▤ ▤
+        ByteBuffer ccView2 = planes[2].getBuffer();
+
+        //
+        // Checked with monospaced fonts.
+        //      D2Coding, Monaco, Source Code Pro, Ubuntu Mono
+        //
+        //  ◯ : U+25EF  // empty
+        //  △ : U+25B3  // marking
+        //  ▢ : U+25A2  // marked
+        //
+        byte[] yccData= new byte[planeSize * channel / 2];
+
+        //  y       △ △ △ △
+        //          △ △ △ △
+        //          △ △ △ △
+        //          △ △ △ △
+        //  cb/cr   ◯ ◯ ◯ ◯
+        //          ◯ ◯ ◯ ◯
+        yView.get(yccData, 0, planeSize);
+
+        //  y       ▢ ▢ ▢ ▢
+        //          ▢ ▢ ▢ ▢
+        //          ▢ ▢ ▢ ▢
+        //          ▢ ▢ ▢ ▢
+        //  cb/cr   △ ◯ ◯ ◯
+        //          ◯ ◯ ◯ ◯
+        ccView1 .get(yccData, planeSize, 1);
+
+        //  y       ▢ ▢ ▢ ▢
+        //          ▢ ▢ ▢ ▢
+        //          ▢ ▢ ▢ ▢
+        //          ▢ ▢ ▢ ▢
+        //  cb/cr   ▢ △ △ △
+        //          △ △ △ △
+        ccView2.get(yccData,
+                planeSize+1, ccView2.remaining());
+
+        image.close();
     }
 }
