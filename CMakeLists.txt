@@ -6,21 +6,26 @@
 # ---------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.1)
 
-# ------------ Dependency ------------
+project(ndk_camera LANGUAGES CXX VERSION 0.3)
 
-# add_subdirectory(spdlog) # header-only
-add_subdirectory(cppmagic)
-
-# ------------ Project Variables ------------
-
-project(ndk_camera LANGUAGES CXX 
-        VERSION 0.3)
-
-# Ensure android
-if(NOT ANDROID)
+if(NOT ANDROID) # Ensure android
     message(FATAL_ERROR "this module is only for Android platform")
     return(1)
-endif() # 
+endif()
+
+# ------------ Dependency ------------
+
+# When using `find_package`, use explicit path
+# set(spdlog_DIR ${CMAKE_CURRENT_SOURCE_DIR}/spdlog)
+# find_package(spdlog CONFIG REQUIRED)
+
+# Use git submodule
+set(SPDLOG_BUILD_EXAMPLES   false)
+set(SPDLOG_BUILD_TESTING    false)
+set(SPDLOG_BUILD_BENCH      false)
+add_subdirectory(spdlog)
+
+# ------------ SetUp + Project Info ------------
 
 message(STATUS "========== ${PROJECT_NAME} : ${PROJECT_VERSION} ==========")
 
@@ -29,34 +34,19 @@ set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 message(STATUS "Root        \t: ${ROOT_DIR}")
 message(STATUS "Project     \t: ${PROJECT_DIR}")
 message(STATUS "Install     \t: ${CMAKE_INSTALL_PREFIX}")
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug) # Debug by default
-endif()
 message(STATUS "Build Type  \t: ${CMAKE_BUILD_TYPE}")
-
-# Platform check
-set(BUILD_SHARED_LIBS true)
-
 message(STATUS "System      \t: ${CMAKE_SYSTEM}")
 message(STATUS "Compiler")
 message(STATUS "  ID        \t: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "  Path      \t: ${CMAKE_CXX_COMPILER}")
 
-# ------------ Global Setup ------------
 
-# link_driectories must come before project creation
-# link_directories(
-#     ///
-# )
+set(BUILD_SHARED_LIBS true)
 
-# ------------ Create Project ------------
-
-add_library(${PROJECT_NAME} 
+add_library(${PROJECT_NAME}
     ${PROJECT_DIR}/include/ndk_camera.h
-
     ${PROJECT_DIR}/src/libmain.cpp
 )
-add_dependencies(${PROJECT_NAME} cppmagic)
 
 message(STATUS "Android")
 message(STATUS "  Platform\t: ${ANDROID_PLATFORM}")     # Android-21 ++
@@ -85,25 +75,16 @@ endif()
 
 # STL: GNU Shared
 if(${ANDROID_STL} STREQUAL "gnustl_shared")
-    message(FATAL_ERROR "This library doesn't support ${ANDROID_STL}")
-    return(1)
-
     target_include_directories(${PROJECT_NAME}
     PRIVATE
         ${ANDROID_NDK}/sources/cxx-stl/gnu-libstdc++/include/ 
     )
-    # link_directories(
-    #     ${ANDROID_NDK}/sources/cxx-stl/gnu-libstdc++/4.9/libs/${ANDROID_ABI}/
-    # )
 # STL: C++ Shared
 elseif(${ANDROID_STL} STREQUAL "c++_shared")
     target_include_directories(${PROJECT_NAME}
     PRIVATE
         ${ANDROID_NDK}/sources/cxx-stl/llvm-libc++/include/ 
     )
-    # link_directories(
-    #     ${ANDROID_NDK}/sources/cxx-stl/llvm-libc++/libs/${ANDROID_ABI}/
-    # )
 endif()
 
 target_include_directories(${PROJECT_NAME}
@@ -113,16 +94,7 @@ PRIVATE
     ${ANDROID_NDK}/sources/android/support/include/
     # ABI
     ${ANDROID_NDK}/platforms/${ANDROID_PLATFORM}/arch-${ANDROID_ARCH_NAME}/usr/include/ 
-    # JNI declarations
-    ${PROJECT_DIR}/android/jni/
 )
-
-# link_directories(
-#     # ABI
-#     ${ANDROID_NDK}/platforms/${ANDROID_PLATFORM}/arch-${ANDROID_ARCH_NAME}/usr/lib/    
-#     # Nested libraries
-#     ${PROJECT_DIR}/android/jniLibs/${ANDROID_ABI}
-# )
 
 # Code for JNI
 target_sources(${PROJECT_NAME}
@@ -136,7 +108,7 @@ target_include_directories(${PROJECT_NAME}
 PUBLIC
     ${PROJECT_DIR}/include    
 PRIVATE
-    ${PROJECT_DIR}/spdlog/include    
+    ${PROJECT_DIR}/android/jni/    # JNI declarations
 )
 
 # Compiler Flags
@@ -158,16 +130,15 @@ else()
 endif()
 
 target_compile_definitions(${PROJECT_NAME}
-    PRIVATE
-        FMT_HEADER_ONLY
+PRIVATE
+    FMT_HEADER_ONLY
 )
-
-# ------------ Linkage ------------
 
 # https://developer.android.com/ndk/guides/stable_apis?hl=ko
 target_link_libraries(${PROJECT_NAME} 
 PUBLIC
-    ${CMAKE_DL_LIBS} cppmagic
-    android log camera2ndk mediandk
+    ${CMAKE_DL_LIBS} 
+    android camera2ndk mediandk
+    spdlog::spdlog log 
 )
 

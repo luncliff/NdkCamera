@@ -4,12 +4,10 @@
 //      luncliff@gmail.com
 //
 // ---------------------------------------------------------------------------
-
-#ifndef JNI_ADAPTER_H_
-#define JNI_ADAPTER_H_
+#ifndef NDK_CAMERA_JNI_ADAPTER_H
+#define NDK_CAMERA_JNI_ADAPTER_H
 
 #include <jni.h>
-
 #include <ndk_camera.h>
 
 _C_INTERFACE_ void JNICALL
@@ -40,4 +38,4 @@ Java_ndcam_Device_startCapture(JNIEnv *env, jobject instance, jobject surface) n
 _C_INTERFACE_ void JNICALL
 Java_ndcam_Device_stopCapture(JNIEnv *env, jobject instance) noexcept;
 
-#endif // JNI_ADAPTER_H_
+#endif // JNI_ADAPTER_H

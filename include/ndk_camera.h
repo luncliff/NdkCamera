@@ -1,3 +1,9 @@
+// ---------------------------------------------------------------------------
+//
+//  Author
+//      luncliff@gmail.com
+//
+// ---------------------------------------------------------------------------
 #ifndef _LINKABLE_DLL_MACRO_
 #define _LINKABLE_DLL_MACRO_
 
@@ -51,8 +57,6 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/sinks/android_sink.h>
-
-#include <magic/coroutine.hpp>
 
 static constexpr auto tag_ndk_camera = "ndk_camera";
 

@@ -1,7 +1,5 @@
-[submodule "cppmagic"]
-	path = cppmagic
-	url = https://github.com/luncliff/Magic
 [submodule "spdlog"]
 	path = spdlog
 	url = https://github.com/gabime/spdlog
 	branch = v1.1.0
+	shallow = true

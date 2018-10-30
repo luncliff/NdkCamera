@@ -17,17 +17,10 @@ extern std::shared_ptr<spdlog::logger> logger;
 //      https://github.com/gabime/spdlog
 PROLOGUE void jni_on_load(void) noexcept
 {
-    auto check_coroutine_available = [=]() -> magic::unplug {
-        co_await magic::stdex::suspend_never{};
-        // see fmt::format for usage
-        logger->info("{}.{}", tag_ndk_camera, nullptr);
-    };
-
     // log will print thread id and message
     spdlog::set_pattern("[thread %t] %v");
     logger = spdlog::android_logger_st("android", tag_ndk_camera);
-
-    check_coroutine_available();
+    logger->info("{}.{}", tag_ndk_camera, nullptr);
 }
 
 // - Note
@@ -48,7 +41,6 @@ struct _HIDDEN_ java_type_set_t final
 java_type_set_t java{};
 
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
-
 // device callbacks
 
 void context_on_device_disconnected(
@@ -270,7 +262,6 @@ void Java_ndcam_CameraModel_SetDeviceData(JNIEnv *env, jclass type,
     const auto count = context.id_list->numCameras;
     assert(count == env->GetArrayLength(devices));
 
-
     // https://developer.android.com/ndk/reference/group/camera
     for (short index = 0; index < count; ++index)
     {
@@ -280,9 +271,9 @@ void Java_ndcam_CameraModel_SetDeviceData(JNIEnv *env, jclass type,
         for (int i = 0; i < entry.count; i += 4)
         {
             const int32_t direction = entry.data.i32[i + 3];
-            if(direction == ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_INPUT)
+            if (direction == ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_INPUT)
                 ;
-            if(direction == ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT)
+            if (direction == ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_OUTPUT)
                 ;
 
             const int32_t format = entry.data.i32[i + 0];
@@ -542,48 +533,4 @@ auto camera_error_message(camera_status_t status) noexcept -> const char *
     default:
         return "ACAMERA_OK";
     }
-}
-
-
-// ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
-
-
-_C_INTERFACE_ void JNICALL
-Java_ndcam_DeviceOperationTest_LogImageInfo(
-        JNIEnv *env, jobject instance,
-        jobject _reader) noexcept
-{
-
-//    media_status_t status = AMEDIA_OK;
-//    assert(reader != nullptr);
-//    int32_t format = 0, width, height;
-////    format == AIMAGE_FORMAT_YUV_420_888
-//    status =  AImageReader_getMaxImages(reader, &format);
-//    assert(status == AMEDIA_OK);
-//    status =  AImageReader_getWidth(reader, &width);
-//    assert(status == AMEDIA_OK);
-//    status =  AImageReader_getHeight(reader, &height);
-//    assert(status == AMEDIA_OK);
-//
-//
-//    logger->info("plane image reader format {} width {} height {}", format, width, height);
-//
-//    AImage* image= nullptr;
-//    status = AImageReader_acquireLatestImage(reader, &image);
-//    assert(status == AMEDIA_OK);
-//    assert(image != nullptr);
-//    status =  AImage_getFormat(image, &format);
-//    assert(status == AMEDIA_OK);
-//    status =  AImage_getWidth(image, &width);
-//    assert(status == AMEDIA_OK);
-//    status =  AImage_getHeight(image, &height);
-//    assert(status == AMEDIA_OK);
-//
-//    logger->info("plane image format {} width {} height {}", format, width, height);
-
-//    logger->info("plane image {} ", (void*)image);
-//
-//    AImage_getFormat(image, std::addressof(format));
-
-
 }
