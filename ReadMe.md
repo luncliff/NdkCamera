@@ -1,5 +1,7 @@
 # NDK Camera
 
+> If there is an issue with this library, please mail to luncliff@gmail.com
+
 Simplified [Android Camera 2 API](https://www.youtube.com/watch?v=Bi4QjMfSOE0).  
 Available for both Java/JNI.
 
