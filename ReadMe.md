@@ -1,5 +1,7 @@
 # NDK Camera
 
+[![Build Status](https://travis-ci.org/luncliff/NdkCamera.svg?branch=master)](https://travis-ci.org/luncliff/NdkCamera)
+
 > If there is an issue with this library, please mail to luncliff@gmail.com
 
 Simplified [Android Camera 2 API](https://www.youtube.com/watch?v=Bi4QjMfSOE0).  
