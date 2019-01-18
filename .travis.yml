@@ -32,8 +32,16 @@ android:
     - platform-tools
     - android-27
     - android-28
+    - build-tools-28.0.3
+  licenses:
+    - 'android-sdk-license-.+'
+    - 'google-gdk-license-.+'
 
 install:
+  # Android NDK
+  - yes | sdkmanager --update > /dev/null 2>&1;
+  - sdkmanager ndk-bundle > /dev/null 2>&1;
+  # Gradle from https://sdkman.io/
   - curl -s "https://get.sdkman.io" | bash > /dev/null
   - source "$HOME/.sdkman/bin/sdkman-init.sh"
   - sdk version
@@ -43,8 +51,9 @@ install:
 before_script:
   - gradle --version
 
-scripte:
-  - gradle clean assemble
+script:
+  - gradle clean
+  - gradle assemble
 
 after_success:
   - tree ./install
