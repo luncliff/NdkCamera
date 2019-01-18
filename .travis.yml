@@ -31,18 +31,20 @@ android:
     - tools
     - platform-tools
     - android-27
+    - android-28
 
 install:
   - curl -s "https://get.sdkman.io" | bash > /dev/null
   - source "$HOME/.sdkman/bin/sdkman-init.sh"
   - sdk version
   - sdk install gradle 5.1.1
+  - sdk use gradle
 
 before_script:
   - gradle --version
 
 scripte:
-  - gradle assemble
+  - gradle clean assemble
 
 after_success:
   - tree ./install
@@ -50,5 +52,3 @@ after_success:
 matrix: 
   include:
     - name: "Android"
-      os: linux
-      dist: xenial
