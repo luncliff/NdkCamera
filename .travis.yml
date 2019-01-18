@@ -1,0 +1,54 @@
+# ---------------------------------------------------------------------------
+#
+#   Author
+#     - luncliff@gmail.com
+#
+# ---------------------------------------------------------------------------
+sudo: false
+
+git:
+  submodules: true
+  depth: 5
+
+notifications:
+  email:
+    - luncliff@gmail.com
+
+language: android
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - tree
+      - unzip
+      - ninja-build
+      - cmake
+
+android:
+  components:
+    - tools
+    - platform-tools
+    - android-27
+
+install:
+  - curl -s "https://get.sdkman.io" | bash > /dev/null
+  - source "$HOME/.sdkman/bin/sdkman-init.sh"
+  - sdk version
+  - sdk install gradle 5.1.1
+
+before_script:
+  - gradle --version
+
+scripte:
+  - gradle assemble
+
+after_success:
+  - tree ./install
+
+matrix: 
+  include:
+    - name: "Android"
+      os: linux
+      dist: xenial

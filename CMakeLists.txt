@@ -6,26 +6,12 @@
 # ---------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.1)
 
-project(ndk_camera LANGUAGES CXX VERSION 0.3)
+project(ndk_camera LANGUAGES CXX VERSION 0.3.1)
 
 if(NOT ANDROID) # Ensure android
     message(FATAL_ERROR "this module is only for Android platform")
     return(1)
 endif()
-
-# ------------ Dependency ------------
-
-# When using `find_package`, use explicit path
-# set(spdlog_DIR ${CMAKE_CURRENT_SOURCE_DIR}/spdlog)
-# find_package(spdlog CONFIG REQUIRED)
-
-# Use git submodule
-set(SPDLOG_BUILD_EXAMPLES   false)
-set(SPDLOG_BUILD_TESTING    false)
-set(SPDLOG_BUILD_BENCH      false)
-add_subdirectory(spdlog)
-
-# ------------ SetUp + Project Info ------------
 
 message(STATUS "========== ${PROJECT_NAME} : ${PROJECT_VERSION} ==========")
 
@@ -107,6 +93,7 @@ PRIVATE
 target_include_directories(${PROJECT_NAME}
 PUBLIC
     ${PROJECT_DIR}/include    
+    ${PROJECT_DIR}/spdlog/include
 PRIVATE
     ${PROJECT_DIR}/android/jni/    # JNI declarations
 )
@@ -139,6 +126,5 @@ target_link_libraries(${PROJECT_NAME}
 PUBLIC
     ${CMAKE_DL_LIBS} 
     android camera2ndk mediandk
-    spdlog::spdlog log 
+    log # spdlog::spdlog 
 )
-

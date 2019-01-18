@@ -4,6 +4,9 @@
 //      luncliff@gmail.com
 //
 // ---------------------------------------------------------------------------
+
+#include <cstddef>
+
 #include "adapter.h"
 
 #define PROLOGUE __attribute__((constructor))

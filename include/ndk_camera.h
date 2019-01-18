@@ -31,10 +31,9 @@
 #ifndef _NDCAM_INCLUDE_H_
 #define _NDCAM_INCLUDE_H_
 
+#include <cassert>
 #include <memory>
 #include <array>
-#include <cstring>
-#include <cassert>
 
 #include <jni.h>
 
