@@ -1,5 +1,6 @@
 [submodule "spdlog"]
 	path = spdlog
 	url = https://github.com/gabime/spdlog
-	branch = v1.1.0
-	shallow = true
+[submodule "coroutine"]
+	path = coroutine
+	url = https://github.com/luncliff/coroutine

@@ -1,37 +1,52 @@
-# ---------------------------------------------------------------------------
 #
 #  Author
 #      luncliff@gmail.com
 #
-# ---------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.8)
 
-project(ndk_camera LANGUAGES CXX VERSION 0.3.1)
+project(ndk_camera LANGUAGES CXX VERSION 0.4)
 
 if(NOT ANDROID) # Ensure android
     message(FATAL_ERROR "this module is only for Android platform")
     return(1)
 endif()
-
-message(STATUS "========== ${PROJECT_NAME} : ${PROJECT_VERSION} ==========")
-
-set(ROOT_DIR    ${CMAKE_SOURCE_DIR})
-set(PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-message(STATUS "Root        \t: ${ROOT_DIR}")
-message(STATUS "Project     \t: ${PROJECT_DIR}")
-message(STATUS "Install     \t: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "Build Type  \t: ${CMAKE_BUILD_TYPE}")
-message(STATUS "System      \t: ${CMAKE_SYSTEM}")
-message(STATUS "Compiler")
-message(STATUS "  ID        \t: ${CMAKE_CXX_COMPILER_ID}")
-message(STATUS "  Path      \t: ${CMAKE_CXX_COMPILER}")
-
-
 set(BUILD_SHARED_LIBS true)
 
+add_subdirectory(spdlog)
+add_subdirectory(coroutine)
+
+message(STATUS "========== ${PROJECT_NAME} : ${PROJECT_VERSION} ==========")
+message(STATUS "System      \t: ${CMAKE_SYSTEM}")
+message(STATUS "Build Type  \t: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Path")
+message(STATUS "  Root      \t: ${CMAKE_SOURCE_DIR}")
+message(STATUS "  Project   \t: ${PROJECT_SOURCE_DIR}")
+message(STATUS "  Install   \t: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "CMake")
+message(STATUS "  Version   \t: ${CMAKE_VERSION}")
+message(STATUS "  Toolchain \t: ${CMAKE_TOOLCHAIN_FILE}")
+message(STATUS "Compiler")
+message(STATUS "  ID        \t: ${CMAKE_CXX_COMPILER_ID}")
+message(STATUS "  Version   \t: ${CMAKE_CXX_COMPILER_VERSION}")
+message(STATUS "  Path      \t: ${CMAKE_CXX_COMPILER}")
+
+message(STATUS "Android")
+message(STATUS "  Platform\t: ${ANDROID_PLATFORM}")     # API level
+message(STATUS "  Arch    \t: ${ANDROID_ARCH_NAME}")    # 
+message(STATUS "  ABI     \t: ${ANDROID_ABI}")          # 
+message(STATUS "  NDK Path\t: ${ANDROID_NDK}")          # Path/to/NDK
+message(STATUS "  STL     \t: ${ANDROID_STL}")          # expect c++_shared
+
+if(${ANDROID_ABI} MATCHES "arm")
+message(STATUS "ARM")
+message(STATUS "  Mode     \t: ${ANDROID_ARM_MODE}")
+message(STATUS "  Neon     \t: ${ANDROID_ARM_NEON}")
+endif()
+
+
 add_library(${PROJECT_NAME}
-    ${PROJECT_DIR}/include/ndk_camera.h
-    ${PROJECT_DIR}/src/libmain.cpp
+    include/ndk_camera.h
+    src/libmain.cpp
 )
 
 message(STATUS "Android")
@@ -85,17 +100,17 @@ PRIVATE
 # Code for JNI
 target_sources(${PROJECT_NAME}
 PRIVATE
-    ${PROJECT_DIR}/android/jni/adapter.h
-    ${PROJECT_DIR}/android/jni/adapter.cpp
+    android/jni/adapter.h
+    android/jni/adapter.cpp
 )
 
 # Make <ndk_camera.h> visible
 target_include_directories(${PROJECT_NAME}
 PUBLIC
-    ${PROJECT_DIR}/include    
-    ${PROJECT_DIR}/spdlog/include
+    include    
+    spdlog/include
 PRIVATE
-    ${PROJECT_DIR}/android/jni/    # JNI declarations
+    android/jni
 )
 
 # Compiler Flags
@@ -125,6 +140,7 @@ PRIVATE
 target_link_libraries(${PROJECT_NAME} 
 PUBLIC
     ${CMAKE_DL_LIBS} 
-    android camera2ndk mediandk
-    log # spdlog::spdlog 
+    android camera2ndk mediandk log
+    spdlog::spdlog 
+    coro::coroutine
 )
