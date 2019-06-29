@@ -1,8 +1,7 @@
 # NDK Camera
 
+[![Build Status](https://dev.azure.com/luncliff/personal/_apis/build/status/luncliff.NdkCamera?branchName=master)](https://dev.azure.com/luncliff/personal/_build/latest?definitionId=25&branchName=master)
 [![Build Status](https://travis-ci.org/luncliff/NdkCamera.svg?branch=master)](https://travis-ci.org/luncliff/NdkCamera)
-
-> If there is an issue with this library, please mail to luncliff@gmail.com
 
 Simplified [Android Camera 2 API](https://www.youtube.com/watch?v=Bi4QjMfSOE0).  
 Available for both Java/JNI.
@@ -27,12 +26,12 @@ Available for both Java/JNI.
 ### Build
 
 For **Windows** environment, latest [Android Studio](https://developer.android.com/studio/) is recommended.  
-For **Linux/MacOS**, [Gradle 4.10.2](https://gradle.org/) will be enough.
+For **Linux/MacOS**, [Gradle 5.3](https://gradle.org/) will be enough.
 
 ```console
 $ git clone https://github.com/luncliff/NdkCamera
 $ cd ./NdkCamera
-$ gradle assemble               # Build: libndk_camera.so & NdkCamera.aar
+$ gradle clean assemble # Build: libndk_camera.so & NdkCamera.aar
 ```
 
 ### Test
