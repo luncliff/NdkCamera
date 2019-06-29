@@ -1,0 +1,28 @@
+
+trigger:
+- master
+- dev/*
+
+pool:
+  vmImage: 'macos-latest'
+
+steps:
+- checkout: self  
+  fetchDepth: 2
+  submodules: true
+
+# Expect CMake 3.14.5
+- script: |
+    brew install ninja
+    brew upgrade cmake
+  displayName: 'Install CMake/Ninja (Brew)'
+
+- script: gradle wrapper
+  displayName: 'Make Gradlew'
+
+- task: Gradle@2 
+  inputs:
+    workingDirectory: ''
+    gradleWrapperFile: 'gradlew'
+    gradleOptions: '-warning-mode all'
+    tasks: 'assemble'
