@@ -1,9 +1,7 @@
-// ---------------------------------------------------------------------------
 //
 //  Author
 //      luncliff@gmail.com
 //
-// ---------------------------------------------------------------------------
 
 // General gradle arguments for root project
 buildscript {    
@@ -58,8 +56,8 @@ android {
         targetSdkVersion 27
 
         // Follow native code's verson
-        versionCode 4
-        versionName "0.3.1"
+        versionCode 5
+        versionName "0.4.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
         // External Native build: CMake
@@ -67,6 +65,17 @@ android {
             cmake {
                 arguments "-DANDROID_STL=c++_shared"
             }
+        }
+    }
+
+    // External Native build
+    //  - using Gradle's CMake plugin
+    //  - Give version/path to CMake
+    externalNativeBuild {
+        cmake {
+            // it's ok to use 3.8 or later, but the tool requires to specify the version
+            version "3.14.5" 
+            path "CMakeLists.txt"
         }
     }
     

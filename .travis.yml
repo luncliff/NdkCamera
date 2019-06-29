@@ -1,59 +1,67 @@
-# ---------------------------------------------------------------------------
 #
 #   Author
 #     - luncliff@gmail.com
 #
-# ---------------------------------------------------------------------------
 sudo: false
 
 git:
   submodules: true
-  depth: 5
+  depth: 3
 
 notifications:
   email:
     - luncliff@gmail.com
 
 language: android
-
 addons:
   apt:
+    update: true
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - tree
-      - unzip
       - ninja-build
-      - cmake
+      - tree
+      - wget
+      - unzip
+      - rsync
 
 android:
   components:
     - tools
     - platform-tools
-    - android-27
-    - android-28
+    - android-25 # 7.0
+    - android-27 # 8.1
+    - android-28 # 9.0
     - build-tools-28.0.3
   licenses:
-    - 'android-sdk-license-.+'
-    - 'google-gdk-license-.+'
+    - android-sdk-license-.+
+    - google-gdk-license-.+
 
-install:
-  # Android NDK
-  - yes | sdkmanager --update > /dev/null 2>&1;
-  - sdkmanager ndk-bundle > /dev/null 2>&1;
-  # Gradle from https://sdkman.io/
+before_install:
+  # Install CMake 3.14.5 (build.gradle requires the exact version)
+  - wget -q https://github.com/Kitware/CMake/releases/download/v3.14.5/cmake-3.14.5-Linux-x86_64.tar.gz
+  - tar -xf cmake-3.14.5-Linux-x86_64.tar.gz
+  - mv ./cmake-3.14.5-Linux-x86_64 ./cmake-3.14.5
+  - rsync -ah ./cmake-3.14.5/bin   /usr
+
+  # Install Gradle from https://sdkman.io/
   - curl -s "https://get.sdkman.io" | bash > /dev/null
   - source "$HOME/.sdkman/bin/sdkman-init.sh"
   - sdk version
-  - sdk install gradle 5.1.1
+  - sdk install gradle
   - sdk use gradle
-
-before_script:
   - gradle --version
+
+install:
+  # Make sure of submodule existance
+  - git submodule update --init --recursive
+  # Accept SDK Licenses + Install NDK
+  - yes | sdkmanager --update > /dev/null 2>&1
+  - sdkmanager ndk-bundle > /dev/null 2>&1
 
 script:
   - gradle clean
-  - gradle assemble
+  - gradle assemble -warning-mode all
 
 after_success:
   - tree ./install
