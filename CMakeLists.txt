@@ -48,6 +48,10 @@ add_library(${PROJECT_NAME}
     include/ndk_camera.h
     src/libmain.cpp
 )
+set_target_properties(${PROJECT_NAME}
+PROPERTIES
+    CXX_STANDARD 17
+)
 
 message(STATUS "Android")
 message(STATUS "  Platform\t: ${ANDROID_PLATFORM}")     # Android-21 ++

@@ -7,9 +7,12 @@ pool:
   vmImage: 'macos-latest'
 
 steps:
-- checkout: self  
+- checkout: self
   fetchDepth: 2
   submodules: true
+
+- script: git submodule update --init --recursive
+  displayName: 'Git Submodules'
 
 - script: brew install ninja
   displayName: 'Install Ninja (Brew)'
@@ -25,5 +28,5 @@ steps:
   inputs:
     workingDirectory: ''
     gradleWrapperFile: 'gradlew'
-    gradleOptions: '-warning-mode all'
+    gradleOptions: ''
     tasks: 'assemble'

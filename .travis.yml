@@ -42,7 +42,8 @@ before_install:
   - wget -q https://github.com/Kitware/CMake/releases/download/v3.14.5/cmake-3.14.5-Linux-x86_64.tar.gz
   - tar -xf cmake-3.14.5-Linux-x86_64.tar.gz
   - mv ./cmake-3.14.5-Linux-x86_64 ./cmake-3.14.5
-  - sudo rsync -ah ./cmake-3.14.5/bin   /usr
+  - sudo rsync -ah ./cmake-3.14.5/bin     /usr
+  - sudo rsync -ah ./cmake-3.14.5/share   /usr
 
   # Install Gradle from https://sdkman.io/
   - curl -s "https://get.sdkman.io" | bash > /dev/null
