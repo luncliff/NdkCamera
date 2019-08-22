@@ -19,11 +19,14 @@ jobs:
           curl -s "https://get.sdkman.io" | bash > /dev/null
           source "$HOME/.sdkman/bin/sdkman-init.sh"
           sdk version
+          sdk install gradle
+          sdk use gradle
+          gradle --version
+      displayName: 'Install SDKMAN and Gradle'
 
     - task: Bash@3
       inputs:
         targetType: 'inline'
         script: |
-          sdk install gradle
-          sdk use gradle
           gradle --version
+        displayName: 'Display Gradle version'
