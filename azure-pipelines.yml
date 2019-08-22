@@ -3,30 +3,14 @@ trigger:
 - master
 - dev/*
 
-pool:
-  vmImage: 'macos-latest'
+#
+# Author: github.com/luncliff (luncliff@gmail.com)
+#
+# References
+#   https://docs.microsoft.com/en-us/azure/devops/pipelines/process/templates?view=azure-devops
+#   https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops#use-a-microsoft-hosted-agent
+#
 
-steps:
-- checkout: self
-  fetchDepth: 2
-  submodules: true
-
-- script: git submodule update --init --recursive
-  displayName: 'Git Submodules'
-
-- script: brew install ninja
-  displayName: 'Install Ninja (Brew)'
-
-# Expect CMake 3.14.5
-- script: brew info cmake
-  displayName: 'Install CMake (Brew)'
-
-- script: gradle wrapper
-  displayName: 'Make Gradlew'
-
-- task: Gradle@2 
-  inputs:
-    workingDirectory: ''
-    gradleWrapperFile: 'gradlew'
-    gradleOptions: ''
-    tasks: 'assemble'
+jobs:
+- template: azure/android-macos.yml
+- template: azure/android-ubuntu1604.yml

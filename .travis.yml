@@ -38,13 +38,6 @@ android:
     - google-gdk-license-.+
 
 before_install:
-  # Install CMake 3.14.5 (build.gradle requires the exact version)
-  - wget -q https://github.com/Kitware/CMake/releases/download/v3.14.5/cmake-3.14.5-Linux-x86_64.tar.gz
-  - tar -xf cmake-3.14.5-Linux-x86_64.tar.gz
-  - mv ./cmake-3.14.5-Linux-x86_64 ./cmake-3.14.5
-  - sudo rsync -ah ./cmake-3.14.5/bin     /usr
-  - sudo rsync -ah ./cmake-3.14.5/share   /usr
-
   # Install Gradle from https://sdkman.io/
   - curl -s "https://get.sdkman.io" | bash > /dev/null
   - source "$HOME/.sdkman/bin/sdkman-init.sh"
@@ -59,6 +52,7 @@ install:
   # Accept SDK Licenses + Install NDK
   - yes | sdkmanager --update > /dev/null 2>&1
   - sdkmanager ndk-bundle > /dev/null 2>&1
+  - sdkmanager cmake
 
 script:
   - gradle clean

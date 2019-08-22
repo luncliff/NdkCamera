@@ -2,9 +2,8 @@
 #  Author
 #      luncliff@gmail.com
 #
-cmake_minimum_required(VERSION 3.8)
-
-project(ndk_camera LANGUAGES CXX VERSION 0.4)
+cmake_minimum_required(VERSION 3.10)
+project(ndk_camera  LANGUAGES CXX   VERSION 0.4)
 
 if(NOT ANDROID) # Ensure android
     message(FATAL_ERROR "this module is only for Android platform")
@@ -111,13 +110,11 @@ PRIVATE
 # Make <ndk_camera.h> visible
 target_include_directories(${PROJECT_NAME}
 PUBLIC
-    include    
-    spdlog/include
+    include
 PRIVATE
     android/jni
 )
 
-# Compiler Flags
 target_compile_options(${PROJECT_NAME}
 PRIVATE
     -fvisibility=hidden
@@ -145,6 +142,5 @@ target_link_libraries(${PROJECT_NAME}
 PUBLIC
     ${CMAKE_DL_LIBS} 
     android camera2ndk mediandk log
-    spdlog::spdlog 
-    coro::coroutine
+    spdlog::spdlog coro::portable
 )
