@@ -12,6 +12,7 @@ jobs:
 
   steps:
     - script: uname -a && git submodule update --init --recursive
+    - script: sudo bash ./coroutine/scripts/install-cmake-3.14.sh
     - task: Bash@3
       inputs:
         targetType: 'inline'
@@ -23,10 +24,10 @@ jobs:
           sdk use gradle
           gradle --version
       displayName: 'Install SDKMAN and Gradle'
-
     - task: Bash@3
       inputs:
         targetType: 'inline'
         script: |
-          gradle --version
-        displayName: 'Display Gradle version'
+          gradle assemble
+        displayName: 'Gradle Assembe'
+
