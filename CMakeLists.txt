@@ -2,7 +2,7 @@
 #  Author
 #      luncliff@gmail.com
 #
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.6)
 project(ndk_camera  LANGUAGES CXX   VERSION 0.4)
 
 if(NOT ANDROID) # Ensure android
@@ -49,7 +49,7 @@ add_library(${PROJECT_NAME}
 )
 set_target_properties(${PROJECT_NAME}
 PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 14
 )
 
 message(STATUS "Android")
