@@ -6,29 +6,29 @@
 #
 
 jobs:
-- job: ${{ parameters.name }}
-  pool:
-    vmImage: 'macos-latest'
+  - job: ${{ parameters.name }}
+    pool:
+      vmImage: "macos-latest"
 
-  steps:
-    - script: uname -a && git submodule update --init --recursive
-      displayName: 'Prepare Git submodules'
+    steps:
+      - script: uname -a && git submodule update --init --recursive
+        displayName: "Prepare Git submodules"
 
-    - task: Bash@3
-      inputs:
-        targetType: 'inline'
-        script: |
-          brew install ninja;
-          brew info cmake;
-      displayName: 'Prepare Homebrew packages'
+      - task: Bash@3
+        inputs:
+          targetType: "inline"
+          script: |
+            brew install ninja;
+            brew info cmake;
+        displayName: "Prepare Homebrew packages"
 
-    - script: gradle wrapper
-      displayName: 'Make Gradlew'
+      - script: gradle wrapper
+        displayName: "Make Gradlew"
 
-    - task: Gradle@2 
-      inputs:
-        workingDirectory: ''
-        gradleWrapperFile: 'gradlew'
-        gradleOptions: ''
-        tasks: 'assemble'
-      displayName: 'Gradle Assembe'
+      - task: Gradle@2
+        inputs:
+          workingDirectory: ""
+          gradleWrapperFile: "gradlew"
+          gradleOptions: ""
+          tasks: "assemble"
+        displayName: "Gradle Assembe"

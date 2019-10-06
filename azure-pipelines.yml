@@ -7,9 +7,8 @@
 #
 
 trigger:
-- master
-- dev/*
+  - master
+  - dev/*
 
 jobs:
-- template: azure/android-macos.yml
-- template: azure/android-ubuntu1604.yml
+  - template: azure/android-macos.yml
