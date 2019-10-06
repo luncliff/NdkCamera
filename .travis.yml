@@ -52,7 +52,6 @@ install:
   # Accept SDK Licenses + Install NDK
   - yes | sdkmanager --update > /dev/null 2>&1
   - sdkmanager ndk-bundle > /dev/null 2>&1
-  - sdkmanager cmake
 
 script:
   - gradle clean
@@ -61,6 +60,6 @@ script:
 after_success:
   - tree ./install
 
-matrix: 
+matrix:
   include:
     - name: "Android"
