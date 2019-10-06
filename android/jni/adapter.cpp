@@ -250,7 +250,7 @@ void Java_ndcam_CameraModel_SetDeviceData(JNIEnv* env, jclass type,
         ACameraMetadata_getConstEntry(
             context.metadata_set[index],
             ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS, &entry);
-        for (int i = 0; i < entry.count; i += 4) {
+        for (auto i = 0u; i < entry.count; i += 4) {
             const int32_t direction = entry.data.i32[i + 3];
             if (direction ==
                 ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS_INPUT)

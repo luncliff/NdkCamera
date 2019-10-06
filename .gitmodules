@@ -1,6 +1,6 @@
 [submodule "spdlog"]
 	path = spdlog
 	url = https://github.com/gabime/spdlog
-[submodule "coroutine"]
-	path = coroutine
-	url = https://github.com/luncliff/coroutine
+[submodule "ms-gsl"]
+	path = ms-gsl
+	url = https://github.com/microsoft/gsl
