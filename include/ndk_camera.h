@@ -6,10 +6,6 @@
 #ifndef _NDCAM_INCLUDE_H_
 #define _NDCAM_INCLUDE_H_
 
-#include <array>
-#include <cassert>
-#include <memory>
-
 #include <gsl/gsl>
 
 #include <android/hardware_buffer.h>
@@ -27,16 +23,17 @@
 #include <camera/NdkCameraMetadataTags.h>
 #include <camera/NdkCaptureRequest.h>
 
-using NativeWindow = std::unique_ptr<ANativeWindow, void (*)(ANativeWindow*)>;
-using CaptureSessionOutputContainer =
+using native_window_ptr =
+    std::unique_ptr<ANativeWindow, void (*)(ANativeWindow*)>;
+using capture_session_output_container_ptr =
     std::unique_ptr<ACaptureSessionOutputContainer,
                     void (*)(ACaptureSessionOutputContainer*)>;
-using CaptureSessionOutput =
+using capture_session_output_ptr =
     std::unique_ptr<ACaptureSessionOutput, void (*)(ACaptureSessionOutput*)>;
-using CaptureRequest =
+using capture_request_ptr =
     std::unique_ptr<ACaptureRequest, void (*)(ACaptureRequest*)>;
 
-using CameraOutputTarget =
+using camera_output_target_ptr =
     std::unique_ptr<ACameraOutputTarget, void (*)(ACameraOutputTarget*)>;
 
 /**
@@ -44,7 +41,7 @@ using CameraOutputTarget =
  *
  * !!! All NDK type members must be public. There will be no encapsulation !!!
  */
-struct context_t final {
+struct camera_group_t final {
     // without external camera, 2 is enough(back + front).
     // But we will use more since there might be multiple(for now, 2) external
     // camera...
@@ -74,13 +71,13 @@ struct context_t final {
     std::array<int, max_camera_count> seq_id_set{};
 
   public:
-    context_t() noexcept = default;
+    camera_group_t() noexcept = default;
     // copy-move is disabled
-    context_t(const context_t&) = delete;
-    context_t(context_t&&) = delete;
-    context_t& operator=(const context_t&) = delete;
-    context_t& operator=(context_t&&) = delete;
-    ~context_t() noexcept {
+    camera_group_t(const camera_group_t&) = delete;
+    camera_group_t(camera_group_t&&) = delete;
+    camera_group_t& operator=(const camera_group_t&) = delete;
+    camera_group_t& operator=(camera_group_t&&) = delete;
+    ~camera_group_t() noexcept {
         this->release(); // ensure release precedure
     }
 
@@ -117,56 +114,56 @@ struct context_t final {
 
 // device callbacks
 
-void context_on_device_disconnected(context_t& context,
+void context_on_device_disconnected(camera_group_t& context,
                                     ACameraDevice* device) noexcept;
 
-void context_on_device_error(context_t& context, ACameraDevice* device,
+void context_on_device_error(camera_group_t& context, ACameraDevice* device,
                              int error) noexcept;
 
 // session state callbacks
 
-void context_on_session_active(context_t& context,
+void context_on_session_active(camera_group_t& context,
                                ACameraCaptureSession* session) noexcept;
 
-void context_on_session_closed(context_t& context,
+void context_on_session_closed(camera_group_t& context,
                                ACameraCaptureSession* session) noexcept;
 
-void context_on_session_ready(context_t& context,
+void context_on_session_ready(camera_group_t& context,
                               ACameraCaptureSession* session) noexcept;
 
 // capture callbacks
 
-void context_on_capture_started(context_t& context,
+void context_on_capture_started(camera_group_t& context,
                                 ACameraCaptureSession* session,
                                 const ACaptureRequest* request,
                                 uint64_t time_point) noexcept;
 
-void context_on_capture_progressed(context_t& context,
+void context_on_capture_progressed(camera_group_t& context,
                                    ACameraCaptureSession* session,
                                    ACaptureRequest* request,
                                    const ACameraMetadata* result) noexcept;
 
-void context_on_capture_completed(context_t& context,
+void context_on_capture_completed(camera_group_t& context,
                                   ACameraCaptureSession* session,
                                   ACaptureRequest* request,
                                   const ACameraMetadata* result) noexcept;
 
-void context_on_capture_failed(context_t& context,
+void context_on_capture_failed(camera_group_t& context,
                                ACameraCaptureSession* session,
                                ACaptureRequest* request,
                                ACameraCaptureFailure* failure) noexcept;
 
-void context_on_capture_buffer_lost(context_t& context,
+void context_on_capture_buffer_lost(camera_group_t& context,
                                     ACameraCaptureSession* session,
                                     ACaptureRequest* request,
                                     ANativeWindow* window,
                                     int64_t frame_number) noexcept;
 
-void context_on_capture_sequence_abort(context_t& context,
+void context_on_capture_sequence_abort(camera_group_t& context,
                                        ACameraCaptureSession* session,
                                        int sequence_id) noexcept;
 
-void context_on_capture_sequence_complete(context_t& context,
+void context_on_capture_sequence_complete(camera_group_t& context,
                                           ACameraCaptureSession* session,
                                           int sequence_id,
                                           int64_t frame_number) noexcept;

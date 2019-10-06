@@ -2,18 +2,12 @@
 //  Author
 //      luncliff@gmail.com
 //
-
-#ifndef _LINKABLE_DLL_MACRO_
-#define _LINKABLE_DLL_MACRO_
+#ifndef NDK_CAMERA_JNI_ADAPTER_H
+#define NDK_CAMERA_JNI_ADAPTER_H
 
 #define _INTERFACE_ __attribute__((visibility("default")))
 #define _C_INTERFACE_ extern "C" __attribute__((visibility("default")))
 #define _HIDDEN_ __attribute__((visibility("hidden")))
-
-#endif // _LINKABLE_DLL_MACRO_
-
-#ifndef NDK_CAMERA_JNI_ADAPTER_H
-#define NDK_CAMERA_JNI_ADAPTER_H
 
 #include <jni.h>
 

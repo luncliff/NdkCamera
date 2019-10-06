@@ -6,21 +6,19 @@
 #include <ndk_camera_log.h>
 
 #include <gsl/gsl>
+#include <spdlog/sinks/android_sink.h>
 
 #include "adapter.h"
-
-#define PROLOGUE __attribute__((constructor))
-#define EPILOGUE __attribute__((destructor))
 
 using namespace std;
 
 // - Note
 //      Logger instance will setup with library loading steps
-extern std::shared_ptr<spdlog::logger> logger;
-
 // - References
 //      https://github.com/gabime/spdlog
-PROLOGUE void jni_on_load(void) noexcept {
+extern std::shared_ptr<spdlog::logger> logger;
+
+__attribute__((constructor)) void jni_on_load(void) noexcept {
     // log will print thread id and message
     spdlog::set_pattern("[thread %t] %v");
     logger = spdlog::android_logger_st("android", tag_ndk_camera);
@@ -46,14 +44,14 @@ java_type_set_t java{};
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 // device callbacks
 
-void context_on_device_disconnected(context_t& context,
+void context_on_device_disconnected(camera_group_t& context,
                                     ACameraDevice* device) noexcept {
     const char* id = ACameraDevice_getId(device);
     logger->error("on_device_disconnect: {}", id);
     return;
 }
 
-void context_on_device_error(context_t& context, ACameraDevice* device,
+void context_on_device_error(camera_group_t& context, ACameraDevice* device,
                              int error) noexcept {
     const char* id = ACameraDevice_getId(device);
     logger->error("on_device_error: {} {}", id, error);
@@ -62,19 +60,19 @@ void context_on_device_error(context_t& context, ACameraDevice* device,
 
 // session state callbacks
 
-void context_on_session_active(context_t& context,
+void context_on_session_active(camera_group_t& context,
                                ACameraCaptureSession* session) noexcept {
     logger->info("on_session_active");
     return;
 }
 
-void context_on_session_closed(context_t& context,
+void context_on_session_closed(camera_group_t& context,
                                ACameraCaptureSession* session) noexcept {
     logger->warn("on_session_closed");
     return;
 }
 
-void context_on_session_ready(context_t& context,
+void context_on_session_ready(camera_group_t& context,
                               ACameraCaptureSession* session) noexcept {
     logger->info("on_session_ready");
     return;
@@ -82,7 +80,7 @@ void context_on_session_ready(context_t& context,
 
 // capture callbacks
 
-void context_on_capture_started(context_t& context,
+void context_on_capture_started(camera_group_t& context,
                                 ACameraCaptureSession* session,
                                 const ACaptureRequest* request,
                                 uint64_t time_point) noexcept {
@@ -90,7 +88,7 @@ void context_on_capture_started(context_t& context,
     return;
 }
 
-void context_on_capture_progressed(context_t& context,
+void context_on_capture_progressed(camera_group_t& context,
                                    ACameraCaptureSession* session,
                                    ACaptureRequest* request,
                                    const ACameraMetadata* result) noexcept {
@@ -109,7 +107,7 @@ void context_on_capture_progressed(context_t& context,
     return;
 }
 
-void context_on_capture_completed(context_t& context,
+void context_on_capture_completed(camera_group_t& context,
                                   ACameraCaptureSession* session,
                                   ACaptureRequest* request,
                                   const ACameraMetadata* result) noexcept {
@@ -128,7 +126,7 @@ void context_on_capture_completed(context_t& context,
     return;
 }
 
-void context_on_capture_failed(context_t& context,
+void context_on_capture_failed(camera_group_t& context,
                                ACameraCaptureSession* session,
                                ACaptureRequest* request,
                                ACameraCaptureFailure* failure) noexcept {
@@ -138,7 +136,7 @@ void context_on_capture_failed(context_t& context,
     return;
 }
 
-void context_on_capture_buffer_lost(context_t& context,
+void context_on_capture_buffer_lost(camera_group_t& context,
                                     ACameraCaptureSession* session,
                                     ACaptureRequest* request,
                                     ANativeWindow* window,
@@ -147,14 +145,14 @@ void context_on_capture_buffer_lost(context_t& context,
     return;
 }
 
-void context_on_capture_sequence_abort(context_t& context,
+void context_on_capture_sequence_abort(camera_group_t& context,
                                        ACameraCaptureSession* session,
                                        int sequenceId) noexcept {
     logger->error("context_on_capture_sequence_abort");
     return;
 }
 
-void context_on_capture_sequence_complete(context_t& context,
+void context_on_capture_sequence_complete(camera_group_t& context,
                                           ACameraCaptureSession* session,
                                           int sequenceId,
                                           int64_t frameNumber) noexcept {
@@ -164,7 +162,7 @@ void context_on_capture_sequence_complete(context_t& context,
 
 // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 
-context_t context{};
+camera_group_t context{};
 
 void Java_ndcam_CameraModel_Init(JNIEnv* env, jclass type) noexcept {
     uint16_t num_camera = 0;
@@ -207,12 +205,12 @@ void Java_ndcam_CameraModel_Init(JNIEnv* env, jclass type) noexcept {
     // https://android.googlesource.com/platform/frameworks/av/+/2e19c3c/services/camera/libcameraservice/camera2/CameraMetadata.h
     num_camera = context.id_list->numCameras;
     // library must reserve enough space to support
-    assert(num_camera <= context_t::max_camera_count);
+    assert(num_camera <= camera_group_t::max_camera_count);
 
     for (uint16_t i = 0u; i < num_camera; ++i) {
         const char* cam_id = context.id_list->cameraIds[i];
         status = ACameraManager_getCameraCharacteristics(
-            context.manager, cam_id, std::addressof(context.metadata_set[i]));
+            context.manager, cam_id, addressof(context.metadata_set[i]));
 
         if (status == ACAMERA_OK)
             continue;
@@ -305,7 +303,7 @@ void Java_ndcam_Device_open(JNIEnv* env, jobject instance) noexcept {
     assert(id != -1);
 
     ACameraDevice_StateCallbacks callbacks{};
-    callbacks.context = std::addressof(context);
+    callbacks.context = addressof(context);
     callbacks.onDisconnected = reinterpret_cast<ACameraDevice_StateCallback>(
         context_on_device_disconnected);
     callbacks.onError = reinterpret_cast<ACameraDevice_ErrorStateCallback>(
@@ -344,12 +342,12 @@ void Java_ndcam_Device_startRepeat(JNIEnv* env, jobject instance,
     // `ANativeWindow_fromSurface` acquires a reference
     // `ANativeWindow_release` releases it
     // ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
-    auto window = NativeWindow{ANativeWindow_fromSurface(env, surface),
-                               ANativeWindow_release};
+    auto window = native_window_ptr{ANativeWindow_fromSurface(env, surface),
+                                    ANativeWindow_release};
     assert(window.get() != nullptr);
 
     ACameraCaptureSession_stateCallbacks on_state_changed{};
-    on_state_changed.context = std::addressof(context);
+    on_state_changed.context = addressof(context);
     on_state_changed.onReady =
         reinterpret_cast<ACameraCaptureSession_stateCallback>(
             context_on_session_ready);
@@ -361,7 +359,7 @@ void Java_ndcam_Device_startRepeat(JNIEnv* env, jobject instance,
             context_on_session_active);
 
     ACameraCaptureSession_captureCallbacks on_capture_event{};
-    on_capture_event.context = std::addressof(context);
+    on_capture_event.context = addressof(context);
     on_capture_event.onCaptureStarted =
         reinterpret_cast<ACameraCaptureSession_captureCallback_start>(
             context_on_capture_started);
@@ -411,12 +409,12 @@ void Java_ndcam_Device_startCapture(JNIEnv* env, jobject instance,
     // `ANativeWindow_fromSurface` acquires a reference
     // `ANativeWindow_release` releases it
     // ANativeWindow* window = ANativeWindow_fromSurface(env, surface);
-    auto window = NativeWindow{ANativeWindow_fromSurface(env, surface),
-                               ANativeWindow_release};
+    auto window = native_window_ptr{ANativeWindow_fromSurface(env, surface),
+                                    ANativeWindow_release};
     assert(window.get() != nullptr);
 
     ACameraCaptureSession_stateCallbacks on_state_changed{};
-    on_state_changed.context = std::addressof(context);
+    on_state_changed.context = addressof(context);
     on_state_changed.onReady =
         reinterpret_cast<ACameraCaptureSession_stateCallback>(
             context_on_session_ready);
@@ -428,7 +426,7 @@ void Java_ndcam_Device_startCapture(JNIEnv* env, jobject instance,
             context_on_session_active);
 
     ACameraCaptureSession_captureCallbacks on_capture_event{};
-    on_capture_event.context = std::addressof(context);
+    on_capture_event.context = addressof(context);
     on_capture_event.onCaptureStarted =
         reinterpret_cast<ACameraCaptureSession_captureCallback_start>(
             context_on_capture_started);

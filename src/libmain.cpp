@@ -5,9 +5,11 @@
 #include <ndk_camera.h>
 #include <ndk_camera_log.h>
 
-std::shared_ptr<spdlog::logger> logger{};
+using namespace std;
 
-void context_t::release() noexcept {
+shared_ptr<spdlog::logger> logger{};
+
+void camera_group_t::release() noexcept {
     // close all devices
     for (uint16_t id = 0u; id < max_camera_count; ++id)
         close_device(id);
@@ -31,17 +33,17 @@ void context_t::release() noexcept {
 }
 
 camera_status_t
-context_t::open_device(uint16_t id,
-                       ACameraDevice_StateCallbacks& callbacks) noexcept {
+camera_group_t::open_device(uint16_t id,
+                            ACameraDevice_StateCallbacks& callbacks) noexcept {
     auto& device = this->device_set[id];
-    auto status = ACameraManager_openCamera(
-        this->manager, this->id_list->cameraIds[id], std::addressof(callbacks),
-        std::addressof(device));
+    auto status = ACameraManager_openCamera(         //
+        this->manager, this->id_list->cameraIds[id], //
+        addressof(callbacks), addressof(device));
     return status;
 }
 
 // Notice that this routine doesn't free metadata
-void context_t::close_device(uint16_t id) noexcept {
+void camera_group_t::close_device(uint16_t id) noexcept {
     // close session
     auto& session = this->session_set[id];
     if (session) {
@@ -71,24 +73,24 @@ void context_t::close_device(uint16_t id) noexcept {
     }
 }
 
-camera_status_t context_t::start_repeat(
+camera_status_t camera_group_t::start_repeat(
     uint16_t id, ANativeWindow* window,
     ACameraCaptureSession_stateCallbacks& on_session_changed,
     ACameraCaptureSession_captureCallbacks& on_capture_event) noexcept {
     camera_status_t status = ACAMERA_OK;
 
     // ---- target surface for camera ----
-    auto target = CameraOutputTarget{[=]() {
-                                         ACameraOutputTarget* target{};
-                                         ACameraOutputTarget_create(
-                                             window, std::addressof(target));
-                                         return target;
-                                     }(),
-                                     ACameraOutputTarget_free};
+    auto target = camera_output_target_ptr{[=]() {
+                                               ACameraOutputTarget* target{};
+                                               ACameraOutputTarget_create(
+                                                   window, addressof(target));
+                                               return target;
+                                           }(),
+                                           ACameraOutputTarget_free};
     assert(target.get() != nullptr);
 
     // ---- capture request (preview) ----
-    auto request = CaptureRequest{
+    auto request = capture_request_ptr{
         [=]() {
             ACaptureRequest* ptr{};
             // capture as a preview
@@ -113,25 +115,23 @@ camera_status_t context_t::start_repeat(
     // ---- session output ----
 
     // container for multiplexing of session output
-    auto container = CaptureSessionOutputContainer{
-        // return container
+    auto container = capture_session_output_container_ptr{
         []() {
             ACaptureSessionOutputContainer* container{};
             ACaptureSessionOutputContainer_create(&container);
             return container;
         }(),
-        // free container
         ACaptureSessionOutputContainer_free};
     assert(container.get() != nullptr);
 
     // session output
-    auto output =
-        CaptureSessionOutput{[=]() {
-                                 ACaptureSessionOutput* output{};
-                                 ACaptureSessionOutput_create(window, &output);
-                                 return output;
-                             }(),
-                             ACaptureSessionOutput_free};
+    auto output = capture_session_output_ptr{
+        [=]() {
+            ACaptureSessionOutput* output{};
+            ACaptureSessionOutput_create(window, &output);
+            return output;
+        }(),
+        ACaptureSessionOutput_free};
     assert(output.get() != nullptr);
 
     status = ACaptureSessionOutputContainer_add(container.get(), output.get());
@@ -139,19 +139,18 @@ camera_status_t context_t::start_repeat(
 
     // ---- create a session ----
     status = ACameraDevice_createCaptureSession(
-        this->device_set[id], container.get(),
-        std::addressof(on_session_changed),
-        std::addressof(this->session_set[id]));
+        this->device_set[id], container.get(), addressof(on_session_changed),
+        addressof(this->session_set[id]));
     assert(status == ACAMERA_OK);
 
     // ---- set request ----
-    std::array<ACaptureRequest*, 1> batch_request{};
+    array<ACaptureRequest*, 1> batch_request{};
     batch_request[0] = request.get();
 
     status = ACameraCaptureSession_setRepeatingRequest(
-        this->session_set[id], std::addressof(on_capture_event),
+        this->session_set[id], addressof(on_capture_event),
         batch_request.size(), batch_request.data(),
-        std::addressof(this->seq_id_set[id]));
+        addressof(this->seq_id_set[id]));
     assert(status == ACAMERA_OK);
 
     status =
@@ -163,7 +162,7 @@ camera_status_t context_t::start_repeat(
     return status;
 }
 
-void context_t::stop_repeat(uint16_t id) noexcept {
+void camera_group_t::stop_repeat(uint16_t id) noexcept {
     auto& session = this->session_set[id];
     if (session) {
         logger->warn("stop_repeat for session {} ", id);
@@ -177,36 +176,36 @@ void context_t::stop_repeat(uint16_t id) noexcept {
     this->seq_id_set[id] = CAPTURE_SEQUENCE_ID_NONE;
 }
 
-camera_status_t context_t::start_capture(
+camera_status_t camera_group_t::start_capture(
     uint16_t id, ANativeWindow* window,
     ACameraCaptureSession_stateCallbacks& on_session_changed,
     ACameraCaptureSession_captureCallbacks& on_capture_event) noexcept {
     camera_status_t status = ACAMERA_OK;
 
     // ---- target surface for camera ----
-    auto target = CameraOutputTarget{[=]() {
-                                         ACameraOutputTarget* target{};
-                                         ACameraOutputTarget_create(
-                                             window, std::addressof(target));
-                                         return target;
-                                     }(),
-                                     ACameraOutputTarget_free};
+    auto target = camera_output_target_ptr{[=]() {
+                                               ACameraOutputTarget* target{};
+                                               ACameraOutputTarget_create(
+                                                   window, addressof(target));
+                                               return target;
+                                           }(),
+                                           ACameraOutputTarget_free};
     assert(target.get() != nullptr);
 
     // ---- capture request (preview) ----
     auto request =
-        CaptureRequest{[](ACameraDevice* device) {
-                           ACaptureRequest* ptr{};
-                           // capture as a preview
-                           // TEMPLATE_RECORD, TEMPLATE_PREVIEW,
-                           // TEMPLATE_MANUAL,
-                           const auto status =
-                               ACameraDevice_createCaptureRequest(
-                                   device, TEMPLATE_STILL_CAPTURE, &ptr);
-                           assert(status == ACAMERA_OK);
-                           return ptr;
-                       }(this->device_set[id]),
-                       ACaptureRequest_free};
+        capture_request_ptr{[](ACameraDevice* device) {
+                                ACaptureRequest* ptr{};
+                                // capture as a preview
+                                // TEMPLATE_RECORD, TEMPLATE_PREVIEW,
+                                // TEMPLATE_MANUAL,
+                                const auto status =
+                                    ACameraDevice_createCaptureRequest(
+                                        device, TEMPLATE_STILL_CAPTURE, &ptr);
+                                assert(status == ACAMERA_OK);
+                                return ptr;
+                            }(this->device_set[id]),
+                            ACaptureRequest_free};
     assert(request.get() != nullptr);
 
     // `ACaptureRequest` == how to capture
@@ -223,25 +222,23 @@ camera_status_t context_t::start_capture(
     // ---- session output ----
 
     // container for multiplexing of session output
-    auto container = CaptureSessionOutputContainer{
-        // return container
+    auto container = capture_session_output_container_ptr{
         []() {
             ACaptureSessionOutputContainer* container{};
             ACaptureSessionOutputContainer_create(&container);
             return container;
         }(),
-        // free container
         ACaptureSessionOutputContainer_free};
     assert(container.get() != nullptr);
 
     // session output
-    auto output =
-        CaptureSessionOutput{[=]() {
-                                 ACaptureSessionOutput* output{};
-                                 ACaptureSessionOutput_create(window, &output);
-                                 return output;
-                             }(),
-                             ACaptureSessionOutput_free};
+    auto output = capture_session_output_ptr{
+        [=]() {
+            ACaptureSessionOutput* output{};
+            ACaptureSessionOutput_create(window, &output);
+            return output;
+        }(),
+        ACaptureSessionOutput_free};
     assert(output.get() != nullptr);
 
     status = ACaptureSessionOutputContainer_add(container.get(), output.get());
@@ -250,19 +247,18 @@ camera_status_t context_t::start_capture(
 
     // ---- create a session ----
     status = ACameraDevice_createCaptureSession(
-        this->device_set[id], container.get(),
-        std::addressof(on_session_changed),
-        std::addressof(this->session_set[id]));
+        this->device_set[id], container.get(), addressof(on_session_changed),
+        addressof(this->session_set[id]));
     assert(status == ACAMERA_OK);
 
     // ---- set request ----
-    std::array<ACaptureRequest*, 1> batch_request{};
+    array<ACaptureRequest*, 1> batch_request{};
     batch_request[0] = request.get();
 
     status = ACameraCaptureSession_capture(
-        this->session_set[id], std::addressof(on_capture_event),
+        this->session_set[id], addressof(on_capture_event),
         batch_request.size(), batch_request.data(),
-        std::addressof(this->seq_id_set[id]));
+        addressof(this->seq_id_set[id]));
     assert(status == ACAMERA_OK);
 
     status =
@@ -275,7 +271,7 @@ camera_status_t context_t::start_capture(
     return status;
 }
 
-void context_t::stop_capture(uint16_t id) noexcept {
+void camera_group_t::stop_capture(uint16_t id) noexcept {
     auto& session = this->session_set[id];
     if (session) {
         logger->warn("stop_capture for session {} ", id);
@@ -289,7 +285,7 @@ void context_t::stop_capture(uint16_t id) noexcept {
     this->seq_id_set[id] = 0;
 }
 
-auto context_t::get_facing(uint16_t id) noexcept -> uint16_t {
+auto camera_group_t::get_facing(uint16_t id) noexcept -> uint16_t {
     // const ACameraMetadata*
     const auto* metadata = metadata_set[id];
 
@@ -306,40 +302,10 @@ auto context_t::get_facing(uint16_t id) noexcept -> uint16_t {
     return facing;
 }
 
-#ifdef _WIN32
-#define PROLOGUE
-#define EPILOGUE
-#else
-#define PROLOGUE __attribute__((constructor))
-#define EPILOGUE __attribute__((destructor))
-#endif
-
-PROLOGUE void OnAttach(void*) noexcept(false) {
-    // On dll is attached...
+__attribute__((constructor)) void on_ndkcamera_attach() noexcept(false) {
     return;
 }
 
-EPILOGUE void OnDetach(void*) noexcept {
-    // On dll is detached...
+__attribute__((destructor)) void on_ndkcamera_detach() noexcept {
     return;
 }
-
-#ifdef _WIN32
-#include <Windows.h>
-
-// https://msdn.microsoft.com/en-us/library/windows/desktop/ms682583(v=vs.85).aspx
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID) {
-    try {
-        if (fdwReason == DLL_PROCESS_ATTACH)
-            ::OnAttach(hinstDLL);
-        if (fdwReason == DLL_PROCESS_DETACH)
-            ::OnDetach(hinstDLL);
-
-        return TRUE;
-    } catch (const std::exception& e) {
-        ::perror(e.what());
-        return FALSE;
-    }
-}
-
-#endif
