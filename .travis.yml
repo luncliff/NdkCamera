@@ -1,0 +1,65 @@
+#
+#   Author
+#     - luncliff@gmail.com
+#
+sudo: false
+
+git:
+  submodules: true
+  depth: 3
+
+notifications:
+  email:
+    - luncliff@gmail.com
+
+language: android
+addons:
+  apt:
+    update: true
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - ninja-build
+      - tree
+      - wget
+      - unzip
+      - rsync
+
+android:
+  components:
+    - tools
+    - platform-tools
+    - android-25 # 7.0
+    - android-27 # 8.1
+    - android-28 # 9.0
+    - build-tools-28.0.3
+  licenses:
+    - android-sdk-license-.+
+    - google-gdk-license-.+
+
+before_install:
+  # Install Gradle from https://sdkman.io/
+  - curl -s "https://get.sdkman.io" | bash > /dev/null
+  - source "$HOME/.sdkman/bin/sdkman-init.sh"
+  - sdk version
+  - sdk install gradle
+  - sdk use gradle
+  - gradle --version
+
+install:
+  # Make sure of submodule existance
+  - git submodule update --init --recursive
+  # Accept SDK Licenses + Install NDK
+  - yes | sdkmanager --update > /dev/null 2>&1
+  - sdkmanager ndk-bundle > /dev/null 2>&1
+
+script:
+  - gradle clean
+  - gradle assemble -warning-mode all
+
+after_success:
+  - tree ./install
+
+matrix:
+  include:
+    - name: "Android"

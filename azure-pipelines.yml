@@ -1,0 +1,14 @@
+#
+# Author: github.com/luncliff (luncliff@gmail.com)
+#
+# References
+#   https://docs.microsoft.com/en-us/azure/devops/pipelines/process/templates?view=azure-devops
+#   https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops#use-a-microsoft-hosted-agent
+#
+
+trigger:
+  - master
+  - dev/*
+
+jobs:
+  - template: azure/android-macos.yml

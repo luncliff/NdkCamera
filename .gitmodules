@@ -1,0 +1,3 @@
+[submodule "ndkcamera"]
+	path = ndkcamera
+	url = https://github.com/luncliff/NdkCamera
